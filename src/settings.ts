@@ -40,10 +40,12 @@ export class AutoGitSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: i18n.settingsTitle });
 
-		// Repository section (async loading)
+		// Repository section with placeholder
 		if (!Platform.isMobileApp) {
 			containerEl.createEl("h3", { text: i18n.sectionRepository });
-			this.displayRepoSection(containerEl);
+			const repoContainer = containerEl.createDiv();
+			repoContainer.setText("Loading...");
+			this.displayRepoSection(repoContainer);
 		}
 
 		// Automation section
@@ -150,16 +152,24 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private async displayRepoSection(containerEl: HTMLElement): Promise<void> {
+	private async displayRepoSection(container: HTMLElement): Promise<void> {
 		const i18n = t();
 		const cwd = this.plugin.getVaultPathSafe();
-		if (!cwd) return;
+		if (!cwd) {
+			container.empty();
+			return;
+		}
 
 		const gitPath = this.plugin.settings.gitPath;
-		const isRepo = await isGitRepo(cwd, gitPath);
+		const [isRepo, currentRemote] = await Promise.all([
+			isGitRepo(cwd, gitPath),
+			getRemoteUrl(cwd, gitPath),
+		]);
+
+		container.empty();
 
 		if (!isRepo) {
-			new Setting(containerEl)
+			new Setting(container)
 				.setName(i18n.repoStatusName)
 				.setDesc(i18n.repoNotInitialized)
 				.addButton((btn) =>
@@ -174,14 +184,13 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					})
 				);
 		} else {
-			new Setting(containerEl)
+			new Setting(container)
 				.setName(i18n.repoStatusName)
 				.setDesc(i18n.repoInitialized);
 
-			const currentRemote = await getRemoteUrl(cwd, gitPath);
 			let remoteInput = currentRemote;
 
-			new Setting(containerEl)
+			new Setting(container)
 				.setName(i18n.remoteUrlName)
 				.setDesc(i18n.remoteUrlDesc)
 				.addText((text) =>

@@ -1,17 +1,12 @@
-.nav-file-title {
-	display: flex;
-	align-items: center;
-}
-
-.nav-file-title-content {
-	flex: 1;
+.nav-file-title,
+.nav-folder-title {
+	position: relative;
 }
 
 .git-status-badge {
+	position: absolute;
+	right: 4px;
 	font-size: 12px;
-	margin-left: auto;
-	padding-right: 4px;
-	flex-shrink: 0;
 }
 
 .git-status-badge.modified {

@@ -240,31 +240,76 @@ export default class AutoGitPlugin extends Plugin {
 		// Remove old badges
 		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
 
-		// Find file explorer items
-		const fileItems = document.querySelectorAll(".nav-file-title");
+		// Calculate folder statuses from file statuses
+		const folderStatuses = this.calculateFolderStatuses();
 
-		fileItems.forEach((item) => {
+		// Add badges to files
+		document.querySelectorAll(".nav-file-title").forEach((item) => {
 			const pathAttr = item.getAttribute("data-path");
 			if (!pathAttr) return;
 
 			const status = this.currentStatuses.get(pathAttr);
-			if (!status) return;
-
-			const badge = document.createElement("span");
-			badge.className = "git-status-badge";
-			badge.textContent = "●";
-
-			if (status === "M") {
-				badge.classList.add("modified");
-			} else if (status === "A") {
-				badge.classList.add("added");
-			} else if (status === "D") {
-				badge.classList.add("deleted");
-			} else if (status === "R") {
-				badge.classList.add("renamed");
+			if (status) {
+				this.addBadgeToElement(item, status);
 			}
-
-			item.appendChild(badge);
 		});
+
+		// Add badges to folders
+		document.querySelectorAll(".nav-folder-title").forEach((item) => {
+			const pathAttr = item.getAttribute("data-path");
+			if (!pathAttr) return;
+
+			const status = folderStatuses.get(pathAttr);
+			if (status) {
+				this.addBadgeToElement(item, status);
+			}
+		});
+	}
+
+	private calculateFolderStatuses(): Map<string, FileStatus> {
+		const folderStatuses = new Map<string, FileStatus>();
+
+		this.currentStatuses.forEach((status, filePath) => {
+			// Get all parent folders
+			const parts = filePath.split(/[/\\]/);
+			for (let i = 1; i < parts.length; i++) {
+				const folderPath = parts.slice(0, i).join("/");
+				const existing = folderStatuses.get(folderPath);
+				// Priority: A > M > R > D
+				if (!existing || this.statusPriority(status) > this.statusPriority(existing)) {
+					folderStatuses.set(folderPath, status);
+				}
+			}
+		});
+
+		return folderStatuses;
+	}
+
+	private statusPriority(status: FileStatus): number {
+		switch (status) {
+			case "A": return 4;
+			case "M": return 3;
+			case "R": return 2;
+			case "D": return 1;
+			default: return 0;
+		}
+	}
+
+	private addBadgeToElement(item: Element, status: FileStatus) {
+		const badge = document.createElement("span");
+		badge.className = "git-status-badge";
+		badge.textContent = "●";
+
+		if (status === "M") {
+			badge.classList.add("modified");
+		} else if (status === "A") {
+			badge.classList.add("added");
+		} else if (status === "D") {
+			badge.classList.add("deleted");
+		} else if (status === "R") {
+			badge.classList.add("renamed");
+		}
+
+		item.appendChild(badge);
 	}
 }
