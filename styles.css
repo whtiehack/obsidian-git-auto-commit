@@ -24,3 +24,7 @@
 .git-status-badge.renamed {
 	color: #61afef;
 }
+
+.git-status-badge.conflict {
+	color: #ff0000;
+}

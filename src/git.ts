@@ -65,8 +65,52 @@ export async function commitAll(cwd: string, gitPath: string, message: string): 
 	}
 }
 
+async function getCurrentBranch(cwd: string, gitPath: string): Promise<string> {
+	const stdout = await runGit({ cwd, gitPath, args: ["rev-parse", "--abbrev-ref", "HEAD"] });
+	return stdout.trim();
+}
+
 export async function push(cwd: string, gitPath: string): Promise<void> {
-	await runGit({ cwd, gitPath, args: ["push"] });
+	const branch = await getCurrentBranch(cwd, gitPath);
+	await runGit({ cwd, gitPath, args: ["push", "-u", "origin", branch] });
+}
+
+export interface PullResult {
+	success: boolean;
+	hasConflicts: boolean;
+	message: string;
+}
+
+export async function pull(cwd: string, gitPath: string): Promise<PullResult> {
+	try {
+		const branch = await getCurrentBranch(cwd, gitPath);
+		const stdout = await runGit({ cwd, gitPath, args: ["pull", "origin", branch] });
+		return { success: true, hasConflicts: false, message: stdout };
+	} catch (e) {
+		const msg = (e as Error).message;
+		if (msg.includes("CONFLICT") || msg.includes("Merge conflict")) {
+			return { success: false, hasConflicts: true, message: msg };
+		}
+		throw e;
+	}
+}
+
+export async function getConflictFiles(cwd: string, gitPath: string): Promise<string[]> {
+	try {
+		const stdout = await runGit({ cwd, gitPath, args: ["diff", "--name-only", "--diff-filter=U"] });
+		return stdout.split("\n").map(f => f.trim()).filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+export async function hasConflicts(cwd: string, gitPath: string): Promise<boolean> {
+	const files = await getConflictFiles(cwd, gitPath);
+	return files.length > 0;
+}
+
+export async function markConflictsResolved(cwd: string, gitPath: string): Promise<void> {
+	await runGit({ cwd, gitPath, args: ["add", "-A"] });
 }
 
 export async function isGitRepo(cwd: string, gitPath: string): Promise<boolean> {
@@ -100,7 +144,7 @@ export async function setRemoteUrl(cwd: string, gitPath: string, url: string): P
 	}
 }
 
-export type FileStatus = "M" | "A" | "D" | "R" | "?" | "";
+export type FileStatus = "M" | "A" | "D" | "R" | "U" | "?" | "";
 
 export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
 	const statusMap = new Map<string, FileStatus>();

@@ -1,7 +1,7 @@
 import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
-import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl } from "./git";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -9,6 +9,7 @@ export interface AutoGitSettings {
 	commitTemplate: string;
 	includeFileList: boolean;
 	autoPush: boolean;
+	autoPullOnOpen: boolean;
 	gitPath: string;
 	ignoreObsidianDir: boolean;
 	showStatusBadge: boolean;
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	commitTemplate: "vault backup: {{date}} {{time}}",
 	includeFileList: true,
 	autoPush: false,
+	autoPullOnOpen: false,
 	gitPath: "git",
 	ignoreObsidianDir: true,
 	showStatusBadge: true,
@@ -50,6 +52,16 @@ export class AutoGitSettingTab extends PluginSettingTab {
 
 		// Automation section
 		containerEl.createEl("h3", { text: i18n.sectionAutomation });
+
+		new Setting(containerEl)
+			.setName(i18n.autoPullOnOpenName)
+			.setDesc(i18n.autoPullOnOpenDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.autoPullOnOpen).onChange(async (value) => {
+					this.plugin.settings.autoPullOnOpen = value;
+					await this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(containerEl)
 			.setName(i18n.autoCommitName)
@@ -161,9 +173,10 @@ export class AutoGitSettingTab extends PluginSettingTab {
 		}
 
 		const gitPath = this.plugin.settings.gitPath;
-		const [isRepo, currentRemote] = await Promise.all([
+		const [isRepo, currentRemote, hasConflict] = await Promise.all([
 			isGitRepo(cwd, gitPath),
 			getRemoteUrl(cwd, gitPath),
+			hasConflicts(cwd, gitPath),
 		]);
 
 		container.empty();
@@ -212,6 +225,28 @@ export class AutoGitSettingTab extends PluginSettingTab {
 						}
 					})
 				);
+
+			// Show conflict resolution button only when there are conflicts
+			if (hasConflict) {
+				new Setting(container)
+					.setName(i18n.conflictStatusName)
+					.setDesc(i18n.conflictStatusDesc)
+					.addButton((btn) =>
+						btn
+							.setButtonText(i18n.resolveConflictButton)
+							.setWarning()
+							.onClick(async () => {
+								try {
+									await markConflictsResolved(cwd, gitPath);
+									this.plugin.setHasConflicts(false);
+									new Notice(i18n.noticeConflictResolved);
+									this.display();
+								} catch (e) {
+									new Notice((e as Error).message);
+								}
+							})
+					);
+			}
 		}
 	}
 }

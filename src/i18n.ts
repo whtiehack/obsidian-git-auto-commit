@@ -14,6 +14,9 @@ type Translations = {
 	autoPushName: string;
 	autoPushDesc: string;
 
+	autoPullOnOpenName: string;
+	autoPullOnOpenDesc: string;
+
 	templateName: string;
 	templateDesc: string;
 
@@ -39,16 +42,26 @@ type Translations = {
 	remoteUrlPlaceholder: string;
 	saveButton: string;
 
+	// Conflict
+	conflictStatusName: string;
+	conflictStatusDesc: string;
+	resolveConflictButton: string;
+
 	// Notices
 	noticeNoChanges: string;
 	noticeCommitted: (count: number) => string;
 	noticePushed: string;
+	noticePulled: string;
 	noticeAutoGitError: (msg: string) => string;
 	noticePushFailed: (msg: string) => string;
+	noticePullFailed: (msg: string) => string;
 	noticeMobileNotSupported: string;
 	noticeDesktopOnly: string;
 	noticeRepoInitialized: string;
 	noticeRemoteSaved: string;
+	noticeConflictDetected: string;
+	noticeConflictResolved: string;
+	noticeCannotCommitConflict: string;
 };
 
 const en: Translations = {
@@ -65,6 +78,9 @@ const en: Translations = {
 
 	autoPushName: "Auto push after commit",
 	autoPushDesc: "Push to remote after successful commit.",
+
+	autoPullOnOpenName: "Auto pull on open",
+	autoPullOnOpenDesc: "Pull from remote when Obsidian opens.",
 
 	templateName: "Commit message template",
 	templateDesc: "Variables: {{date}}, {{time}}, {{files}}, {{count}}",
@@ -90,15 +106,24 @@ const en: Translations = {
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",
 	saveButton: "Save",
 
+	conflictStatusName: "Merge conflicts detected",
+	conflictStatusDesc: "Please resolve conflicts manually, then click the button below.",
+	resolveConflictButton: "Mark as resolved",
+
 	noticeNoChanges: "GitAutoCommit: No changes to commit.",
 	noticeCommitted: (count) => `GitAutoCommit: Committed ${count} file(s).`,
 	noticePushed: "GitAutoCommit: Pushed to remote.",
+	noticePulled: "GitAutoCommit: Pulled from remote.",
 	noticeAutoGitError: (msg) => `GitAutoCommit: Error - ${msg}`,
 	noticePushFailed: (msg) => `GitAutoCommit: Push failed - ${msg}`,
+	noticePullFailed: (msg) => `GitAutoCommit: Pull failed - ${msg}`,
 	noticeMobileNotSupported: "GitAutoCommit: Git not available on mobile.",
 	noticeDesktopOnly: "GitAutoCommit: Requires desktop vault.",
 	noticeRepoInitialized: "GitAutoCommit: Repository initialized.",
 	noticeRemoteSaved: "GitAutoCommit: Remote URL saved.",
+	noticeConflictDetected: "GitAutoCommit: Merge conflicts detected! Please resolve manually.",
+	noticeConflictResolved: "GitAutoCommit: Conflicts marked as resolved.",
+	noticeCannotCommitConflict: "GitAutoCommit: Cannot commit while conflicts exist.",
 };
 
 const zhCN: Translations = {
@@ -115,6 +140,9 @@ const zhCN: Translations = {
 
 	autoPushName: "提交后自动推送",
 	autoPushDesc: "提交成功后自动推送到远程仓库。",
+
+	autoPullOnOpenName: "打开时自动拉取",
+	autoPullOnOpenDesc: "打开 Obsidian 时自动从远程仓库拉取。",
 
 	templateName: "提交消息模板",
 	templateDesc: "变量: {{date}}, {{time}}, {{files}}, {{count}}",
@@ -140,15 +168,24 @@ const zhCN: Translations = {
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",
 	saveButton: "保存",
 
+	conflictStatusName: "检测到合并冲突",
+	conflictStatusDesc: "请手动解决冲突后，点击下方按钮。",
+	resolveConflictButton: "标记为已解决",
+
 	noticeNoChanges: "GitAutoCommit: 没有可提交的更改。",
 	noticeCommitted: (count) => `GitAutoCommit: 已提交 ${count} 个文件。`,
 	noticePushed: "GitAutoCommit: 已推送到远程仓库。",
+	noticePulled: "GitAutoCommit: 已从远程仓库拉取。",
 	noticeAutoGitError: (msg) => `GitAutoCommit: 错误 - ${msg}`,
 	noticePushFailed: (msg) => `GitAutoCommit: 推送失败 - ${msg}`,
+	noticePullFailed: (msg) => `GitAutoCommit: 拉取失败 - ${msg}`,
 	noticeMobileNotSupported: "GitAutoCommit: 移动端不支持 Git。",
 	noticeDesktopOnly: "GitAutoCommit: 需要桌面端。",
 	noticeRepoInitialized: "GitAutoCommit: 仓库已初始化。",
 	noticeRemoteSaved: "GitAutoCommit: 远程地址已保存。",
+	noticeConflictDetected: "GitAutoCommit: 检测到合并冲突！请手动解决。",
+	noticeConflictResolved: "GitAutoCommit: 冲突已标记为解决。",
+	noticeCannotCommitConflict: "GitAutoCommit: 存在冲突时无法提交。",
 };
 
 const translations: Record<string, Translations> = {

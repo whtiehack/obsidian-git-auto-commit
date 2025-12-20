@@ -1,6 +1,6 @@
 import { EventRef, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, getFileStatuses, FileStatus } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, hasConflicts, markConflictsResolved, FileStatus } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 
@@ -13,6 +13,9 @@ export default class AutoGitPlugin extends Plugin {
 	private vaultEventRefs: EventRef[] = [];
 	private statusRefreshInterval: number | null = null;
 	private currentStatuses: Map<string, FileStatus> = new Map();
+	private conflictFiles: Set<string> = new Set();
+	private _hasConflicts = false;
+	private resolveConflictCommand: { id: string } | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -35,8 +38,23 @@ export default class AutoGitPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "pull-now",
+			name: "Pull now",
+			callback: () => this.doPull(),
+		});
+
 		this.setupVaultListeners();
 		this.setupStatusBadges();
+
+		// Auto pull on open
+		if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
+			// Delay to ensure vault is ready
+			window.setTimeout(() => this.doPull(), 1000);
+		}
+
+		// Check for existing conflicts on load
+		this.checkConflicts();
 	}
 
 	onunload() {
@@ -131,6 +149,14 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	async runCommit(reason: "manual" | "auto"): Promise<boolean> {
+		// Don't commit if there are conflicts
+		if (this._hasConflicts) {
+			if (reason === "manual") {
+				new Notice(t().noticeCannotCommitConflict);
+			}
+			return false;
+		}
+
 		if (this.isCommitting) {
 			this.pendingRerun = true;
 			return false;
@@ -197,6 +223,71 @@ export default class AutoGitPlugin extends Plugin {
 		}
 	}
 
+	private async doPull() {
+		if (Platform.isMobileApp) {
+			new Notice(t().noticeMobileNotSupported);
+			return;
+		}
+
+		try {
+			const cwd = this.getVaultPath();
+			const result = await pull(cwd, this.settings.gitPath);
+
+			if (result.hasConflicts) {
+				await this.checkConflicts();
+				new Notice(t().noticeConflictDetected);
+			} else if (result.success) {
+				new Notice(t().noticePulled);
+				this.refreshStatusBadges();
+			}
+		} catch (e) {
+			new Notice(t().noticePullFailed((e as Error).message));
+		}
+	}
+
+	private async checkConflicts() {
+		const cwd = this.getVaultPathSafe();
+		if (!cwd) return;
+
+		const conflicts = await getConflictFiles(cwd, this.settings.gitPath);
+		this.conflictFiles = new Set(conflicts);
+		this.setHasConflicts(conflicts.length > 0);
+		this.refreshStatusBadges();
+	}
+
+	setHasConflicts(value: boolean) {
+		this._hasConflicts = value;
+
+		if (value && !this.resolveConflictCommand) {
+			// Add resolve conflict command when conflicts exist
+			this.resolveConflictCommand = this.addCommand({
+				id: "resolve-conflicts",
+				name: "Mark conflicts as resolved",
+				callback: async () => {
+					const cwd = this.getVaultPathSafe();
+					if (!cwd) return;
+					try {
+						await markConflictsResolved(cwd, this.settings.gitPath);
+						this.conflictFiles.clear();
+						this.setHasConflicts(false);
+						new Notice(t().noticeConflictResolved);
+						this.refreshStatusBadges();
+					} catch (e) {
+						new Notice((e as Error).message);
+					}
+				},
+			});
+		} else if (!value && this.resolveConflictCommand) {
+			// Remove command when no conflicts - Note: Obsidian doesn't support removing commands
+			// So we just clear the reference
+			this.resolveConflictCommand = null;
+		}
+
+		if (!value) {
+			this.conflictFiles.clear();
+		}
+	}
+
 	// Status badge functionality
 	private setupStatusBadges() {
 		if (Platform.isMobileApp || !this.settings.showStatusBadge) return;
@@ -240,15 +331,21 @@ export default class AutoGitPlugin extends Plugin {
 		// Remove old badges
 		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
 
-		// Calculate folder statuses from file statuses
-		const folderStatuses = this.calculateFolderStatuses();
+		// Merge conflict files into statuses with highest priority
+		const mergedStatuses = new Map(this.currentStatuses);
+		this.conflictFiles.forEach((file) => {
+			mergedStatuses.set(file, "U" as FileStatus); // U for unmerged/conflict
+		});
+
+		// Calculate folder statuses from merged statuses
+		const folderStatuses = this.calculateFolderStatuses(mergedStatuses);
 
 		// Add badges to files
 		document.querySelectorAll(".nav-file-title").forEach((item) => {
 			const pathAttr = item.getAttribute("data-path");
 			if (!pathAttr) return;
 
-			const status = this.currentStatuses.get(pathAttr);
+			const status = mergedStatuses.get(pathAttr);
 			if (status) {
 				this.addBadgeToElement(item, status);
 			}
@@ -266,16 +363,17 @@ export default class AutoGitPlugin extends Plugin {
 		});
 	}
 
-	private calculateFolderStatuses(): Map<string, FileStatus> {
+	private calculateFolderStatuses(statuses?: Map<string, FileStatus>): Map<string, FileStatus> {
+		const sourceStatuses = statuses || this.currentStatuses;
 		const folderStatuses = new Map<string, FileStatus>();
 
-		this.currentStatuses.forEach((status, filePath) => {
+		sourceStatuses.forEach((status, filePath) => {
 			// Get all parent folders
 			const parts = filePath.split(/[/\\]/);
 			for (let i = 1; i < parts.length; i++) {
 				const folderPath = parts.slice(0, i).join("/");
 				const existing = folderStatuses.get(folderPath);
-				// Priority: A > M > R > D
+				// Priority: U (conflict) > A > M > R > D
 				if (!existing || this.statusPriority(status) > this.statusPriority(existing)) {
 					folderStatuses.set(folderPath, status);
 				}
@@ -287,6 +385,7 @@ export default class AutoGitPlugin extends Plugin {
 
 	private statusPriority(status: FileStatus): number {
 		switch (status) {
+			case "U": return 5; // Conflict - highest priority
 			case "A": return 4;
 			case "M": return 3;
 			case "R": return 2;
@@ -300,7 +399,9 @@ export default class AutoGitPlugin extends Plugin {
 		badge.className = "git-status-badge";
 		badge.textContent = "●";
 
-		if (status === "M") {
+		if (status === "U") {
+			badge.classList.add("conflict");
+		} else if (status === "M") {
 			badge.classList.add("modified");
 		} else if (status === "A") {
 			badge.classList.add("added");
