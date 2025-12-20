@@ -1,6 +1,6 @@
 import { EventRef, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, hasConflicts, markConflictsResolved, FileStatus } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, FileStatus } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 
@@ -56,11 +56,11 @@ export default class AutoGitPlugin extends Plugin {
 		// Auto pull on open
 		if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
 			// Delay to ensure vault is ready
-			window.setTimeout(() => this.doPull(), 1000);
+			window.setTimeout(() => { void this.doPull(); }, 1000);
 		}
 
 		// Check for existing conflicts on load
-		this.checkConflicts();
+		void this.checkConflicts();
 	}
 
 	onunload() {
@@ -118,7 +118,8 @@ export default class AutoGitPlugin extends Plugin {
 	private shouldIgnore(path: string): boolean {
 		if (path.startsWith(".git/") || path.startsWith(".git\\")) return true;
 		if (this.settings.ignoreObsidianDir) {
-			if (path.startsWith(".obsidian/") || path.startsWith(".obsidian\\")) return true;
+			const configDir = this.app.vault.configDir;
+			if (path.startsWith(configDir + "/") || path.startsWith(configDir + "\\")) return true;
 		}
 		return false;
 	}
@@ -127,7 +128,7 @@ export default class AutoGitPlugin extends Plugin {
 		this.clearDebounce();
 		this.debounceTimer = window.setTimeout(() => {
 			this.debounceTimer = null;
-			this.runCommit("auto");
+			void this.runCommit("auto");
 		}, this.settings.debounceSeconds * 1000);
 	}
 
@@ -325,6 +326,8 @@ export default class AutoGitPlugin extends Plugin {
 		getFileStatuses(cwd, this.settings.gitPath).then((statuses) => {
 			this.currentStatuses = statuses;
 			this.updateBadgesInDOM();
+		}).catch(() => {
+			// Ignore errors
 		});
 	}
 

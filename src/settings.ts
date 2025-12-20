@@ -40,17 +40,17 @@ export class AutoGitSettingTab extends PluginSettingTab {
 		const i18n = t();
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: i18n.settingsTitle });
+		new Setting(containerEl).setName(i18n.settingsTitle).setHeading();
 
 		// Repository section
 		if (!Platform.isMobileApp) {
-			containerEl.createEl("h3", { text: i18n.sectionRepository });
+			new Setting(containerEl).setName(i18n.sectionRepository).setHeading();
 			const repoContainer = containerEl.createDiv();
-			this.displayRepoSection(repoContainer);
+			void this.displayRepoSection(repoContainer);
 		}
 
 		// Automation section
-		containerEl.createEl("h3", { text: i18n.sectionAutomation });
+		new Setting(containerEl).setName(i18n.sectionAutomation).setHeading();
 
 		new Setting(containerEl)
 			.setName(i18n.autoPullOnOpenName)
@@ -108,7 +108,7 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			);
 
 		// Configuration section
-		containerEl.createEl("h3", { text: i18n.sectionConfiguration });
+		new Setting(containerEl).setName(i18n.sectionConfiguration).setHeading();
 
 		new Setting(containerEl)
 			.setName(i18n.templateName)
@@ -149,7 +149,7 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.setDesc(i18n.gitPathDesc)
 			.addText((text) =>
 				text
-					.setPlaceholder("git")
+					.setPlaceholder("Path to git executable")
 					.setValue(this.plugin.settings.gitPath)
 					.onChange(async (value) => {
 						this.plugin.settings.gitPath = value.trim() || "git";

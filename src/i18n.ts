@@ -97,8 +97,8 @@ const en: Translations = {
 	gitPathName: "Git binary path",
 	gitPathDesc: "Path to git executable. Default: git",
 
-	ignoreObsidianName: "Ignore .obsidian directory",
-	ignoreObsidianDesc: "Exclude config folder from triggering auto-commits.",
+	ignoreObsidianName: "Ignore config directory",
+	ignoreObsidianDesc: "Exclude Obsidian config folder from triggering auto-commits.",
 
 	includeFileListName: "Include file list in commit body",
 	includeFileListDesc: "List changed files in commit message body, one per line.",
@@ -168,8 +168,8 @@ const zhCN: Translations = {
 	gitPathName: "Git 可执行文件路径",
 	gitPathDesc: "git 的路径，默认: git",
 
-	ignoreObsidianName: "忽略 .obsidian 目录",
-	ignoreObsidianDesc: "排除配置文件夹触发自动提交。",
+	ignoreObsidianName: "忽略配置目录",
+	ignoreObsidianDesc: "排除 Obsidian 配置文件夹触发自动提交。",
 
 	includeFileListName: "在提交正文中包含文件列表",
 	includeFileListDesc: "在提交消息正文中列出变动的文件，每行一个。",
