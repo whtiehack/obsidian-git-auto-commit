@@ -84,15 +84,15 @@ const en: Translations = {
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",
 	saveButton: "Save",
 
-	noticeNoChanges: "No changes to commit.",
-	noticeCommitted: (count) => `Committed ${count} file(s).`,
-	noticePushed: "Pushed to remote.",
-	noticeAutoGitError: (msg) => `Auto Git error: ${msg}`,
-	noticePushFailed: (msg) => `Push failed: ${msg}`,
-	noticeMobileNotSupported: "Auto Git: Git not available on mobile.",
-	noticeDesktopOnly: "Auto Git requires desktop vault.",
-	noticeRepoInitialized: "Git repository initialized.",
-	noticeRemoteSaved: "Remote URL saved.",
+	noticeNoChanges: "GitAutoCommit: No changes to commit.",
+	noticeCommitted: (count) => `GitAutoCommit: Committed ${count} file(s).`,
+	noticePushed: "GitAutoCommit: Pushed to remote.",
+	noticeAutoGitError: (msg) => `GitAutoCommit: Error - ${msg}`,
+	noticePushFailed: (msg) => `GitAutoCommit: Push failed - ${msg}`,
+	noticeMobileNotSupported: "GitAutoCommit: Git not available on mobile.",
+	noticeDesktopOnly: "GitAutoCommit: Requires desktop vault.",
+	noticeRepoInitialized: "GitAutoCommit: Repository initialized.",
+	noticeRemoteSaved: "GitAutoCommit: Remote URL saved.",
 };
 
 const zhCN: Translations = {
@@ -131,15 +131,15 @@ const zhCN: Translations = {
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",
 	saveButton: "保存",
 
-	noticeNoChanges: "没有可提交的更改。",
-	noticeCommitted: (count) => `已提交 ${count} 个文件。`,
-	noticePushed: "已推送到远程仓库。",
-	noticeAutoGitError: (msg) => `自动 Git 错误: ${msg}`,
-	noticePushFailed: (msg) => `推送失败: ${msg}`,
-	noticeMobileNotSupported: "自动 Git: 移动端不支持 Git。",
-	noticeDesktopOnly: "自动 Git 需要桌面端。",
-	noticeRepoInitialized: "Git 仓库已初始化。",
-	noticeRemoteSaved: "远程仓库地址已保存。",
+	noticeNoChanges: "GitAutoCommit: 没有可提交的更改。",
+	noticeCommitted: (count) => `GitAutoCommit: 已提交 ${count} 个文件。`,
+	noticePushed: "GitAutoCommit: 已推送到远程仓库。",
+	noticeAutoGitError: (msg) => `GitAutoCommit: 错误 - ${msg}`,
+	noticePushFailed: (msg) => `GitAutoCommit: 推送失败 - ${msg}`,
+	noticeMobileNotSupported: "GitAutoCommit: 移动端不支持 Git。",
+	noticeDesktopOnly: "GitAutoCommit: 需要桌面端。",
+	noticeRepoInitialized: "GitAutoCommit: 仓库已初始化。",
+	noticeRemoteSaved: "GitAutoCommit: 远程地址已保存。",
 };
 
 const translations: Record<string, Translations> = {
