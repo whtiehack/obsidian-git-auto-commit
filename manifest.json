@@ -1,7 +1,7 @@
 {
 	"id": "auto-git-commit",
 	"name": "Auto Git Commit",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"minAppVersion": "1.2.0",
 	"description": "Automatically commit vault changes to git with customizable triggers and templates.",
 	"author": "small",
