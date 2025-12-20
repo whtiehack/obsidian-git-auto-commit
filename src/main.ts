@@ -114,6 +114,14 @@ export default class AutoGitPlugin extends Plugin {
 		return adapter.getBasePath();
 	}
 
+	getVaultPathSafe(): string | null {
+		const adapter = this.app.vault.adapter;
+		if (!(adapter instanceof FileSystemAdapter)) {
+			return null;
+		}
+		return adapter.getBasePath();
+	}
+
 	async runCommit(reason: "manual" | "auto"): Promise<boolean> {
 		if (this.isCommitting) {
 			this.pendingRerun = true;

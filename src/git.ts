@@ -68,3 +68,34 @@ export async function commitAll(cwd: string, gitPath: string, message: string): 
 export async function push(cwd: string, gitPath: string): Promise<void> {
 	await runGit({ cwd, gitPath, args: ["push"] });
 }
+
+export async function isGitRepo(cwd: string, gitPath: string): Promise<boolean> {
+	try {
+		await runGit({ cwd, gitPath, args: ["rev-parse", "--git-dir"] });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export async function initRepo(cwd: string, gitPath: string): Promise<void> {
+	await runGit({ cwd, gitPath, args: ["init"] });
+}
+
+export async function getRemoteUrl(cwd: string, gitPath: string): Promise<string> {
+	try {
+		const stdout = await runGit({ cwd, gitPath, args: ["remote", "get-url", "origin"] });
+		return stdout.trim();
+	} catch {
+		return "";
+	}
+}
+
+export async function setRemoteUrl(cwd: string, gitPath: string, url: string): Promise<void> {
+	const currentUrl = await getRemoteUrl(cwd, gitPath);
+	if (currentUrl) {
+		await runGit({ cwd, gitPath, args: ["remote", "set-url", "origin", url] });
+	} else {
+		await runGit({ cwd, gitPath, args: ["remote", "add", "origin", url] });
+	}
+}

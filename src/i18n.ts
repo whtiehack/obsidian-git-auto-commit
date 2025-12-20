@@ -3,6 +3,7 @@ type Translations = {
 	settingsTitle: string;
 	sectionAutomation: string;
 	sectionConfiguration: string;
+	sectionRepository: string;
 
 	autoCommitName: string;
 	autoCommitDesc: string;
@@ -25,6 +26,16 @@ type Translations = {
 	includeFileListName: string;
 	includeFileListDesc: string;
 
+	// Repository
+	repoStatusName: string;
+	repoNotInitialized: string;
+	repoInitialized: string;
+	initRepoButton: string;
+	remoteUrlName: string;
+	remoteUrlDesc: string;
+	remoteUrlPlaceholder: string;
+	saveButton: string;
+
 	// Notices
 	noticeNoChanges: string;
 	noticeCommitted: (count: number) => string;
@@ -33,12 +44,15 @@ type Translations = {
 	noticePushFailed: (msg: string) => string;
 	noticeMobileNotSupported: string;
 	noticeDesktopOnly: string;
+	noticeRepoInitialized: string;
+	noticeRemoteSaved: string;
 };
 
 const en: Translations = {
 	settingsTitle: "Auto Git Commit",
 	sectionAutomation: "Automation",
 	sectionConfiguration: "Configuration",
+	sectionRepository: "Repository",
 
 	autoCommitName: "Enable auto commit",
 	autoCommitDesc: "Automatically commit when files change (debounced).",
@@ -61,6 +75,15 @@ const en: Translations = {
 	includeFileListName: "Include file list in commit body",
 	includeFileListDesc: "List changed files in commit message body, one per line.",
 
+	repoStatusName: "Repository status",
+	repoNotInitialized: "Not a git repository",
+	repoInitialized: "Git repository initialized",
+	initRepoButton: "Initialize repository",
+	remoteUrlName: "Remote URL (origin)",
+	remoteUrlDesc: "Set the remote repository URL for push.",
+	remoteUrlPlaceholder: "https://github.com/user/repo.git",
+	saveButton: "Save",
+
 	noticeNoChanges: "No changes to commit.",
 	noticeCommitted: (count) => `Committed ${count} file(s).`,
 	noticePushed: "Pushed to remote.",
@@ -68,12 +91,15 @@ const en: Translations = {
 	noticePushFailed: (msg) => `Push failed: ${msg}`,
 	noticeMobileNotSupported: "Auto Git: Git not available on mobile.",
 	noticeDesktopOnly: "Auto Git requires desktop vault.",
+	noticeRepoInitialized: "Git repository initialized.",
+	noticeRemoteSaved: "Remote URL saved.",
 };
 
 const zhCN: Translations = {
 	settingsTitle: "自动 Git 提交",
 	sectionAutomation: "自动化",
 	sectionConfiguration: "配置",
+	sectionRepository: "仓库",
 
 	autoCommitName: "启用自动提交",
 	autoCommitDesc: "文件变动后自动提交（防抖）。",
@@ -96,6 +122,15 @@ const zhCN: Translations = {
 	includeFileListName: "在提交正文中包含文件列表",
 	includeFileListDesc: "在提交消息正文中列出变动的文件，每行一个。",
 
+	repoStatusName: "仓库状态",
+	repoNotInitialized: "尚未初始化为 Git 仓库",
+	repoInitialized: "Git 仓库已初始化",
+	initRepoButton: "初始化仓库",
+	remoteUrlName: "远程仓库地址 (origin)",
+	remoteUrlDesc: "设置用于推送的远程仓库地址。",
+	remoteUrlPlaceholder: "https://github.com/user/repo.git",
+	saveButton: "保存",
+
 	noticeNoChanges: "没有可提交的更改。",
 	noticeCommitted: (count) => `已提交 ${count} 个文件。`,
 	noticePushed: "已推送到远程仓库。",
@@ -103,6 +138,8 @@ const zhCN: Translations = {
 	noticePushFailed: (msg) => `推送失败: ${msg}`,
 	noticeMobileNotSupported: "自动 Git: 移动端不支持 Git。",
 	noticeDesktopOnly: "自动 Git 需要桌面端。",
+	noticeRepoInitialized: "Git 仓库已初始化。",
+	noticeRemoteSaved: "远程仓库地址已保存。",
 };
 
 const translations: Record<string, Translations> = {

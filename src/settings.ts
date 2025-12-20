@@ -1,6 +1,7 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -36,6 +37,12 @@ export class AutoGitSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("h2", { text: i18n.settingsTitle });
+
+		// Repository section (async loading)
+		if (!Platform.isMobileApp) {
+			containerEl.createEl("h3", { text: i18n.sectionRepository });
+			this.displayRepoSection(containerEl);
+		}
 
 		// Automation section
 		containerEl.createEl("h3", { text: i18n.sectionAutomation });
@@ -128,5 +135,61 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	private async displayRepoSection(containerEl: HTMLElement): Promise<void> {
+		const i18n = t();
+		const cwd = this.plugin.getVaultPathSafe();
+		if (!cwd) return;
+
+		const gitPath = this.plugin.settings.gitPath;
+		const isRepo = await isGitRepo(cwd, gitPath);
+
+		if (!isRepo) {
+			new Setting(containerEl)
+				.setName(i18n.repoStatusName)
+				.setDesc(i18n.repoNotInitialized)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.initRepoButton).onClick(async () => {
+						try {
+							await initRepo(cwd, gitPath);
+							new Notice(i18n.noticeRepoInitialized);
+							this.display();
+						} catch (e) {
+							new Notice((e as Error).message);
+						}
+					})
+				);
+		} else {
+			new Setting(containerEl)
+				.setName(i18n.repoStatusName)
+				.setDesc(i18n.repoInitialized);
+
+			const currentRemote = await getRemoteUrl(cwd, gitPath);
+			let remoteInput = currentRemote;
+
+			new Setting(containerEl)
+				.setName(i18n.remoteUrlName)
+				.setDesc(i18n.remoteUrlDesc)
+				.addText((text) =>
+					text
+						.setPlaceholder(i18n.remoteUrlPlaceholder)
+						.setValue(currentRemote)
+						.onChange((value) => {
+							remoteInput = value.trim();
+						})
+				)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.saveButton).onClick(async () => {
+						if (!remoteInput) return;
+						try {
+							await setRemoteUrl(cwd, gitPath, remoteInput);
+							new Notice(i18n.noticeRemoteSaved);
+						} catch (e) {
+							new Notice((e as Error).message);
+						}
+					})
+				);
+		}
 	}
 }
