@@ -227,16 +227,22 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					})
 				);
 
-			// Commit and push button
+			// Commit and push buttons
 			new Setting(container)
-				.setName(i18n.commitPushName)
-				.setDesc(i18n.commitPushDesc)
+				.setName(i18n.commitNowName)
+				.setDesc(i18n.commitNowDesc)
 				.addButton((btn) =>
-					btn.setButtonText(i18n.commitPushButton).onClick(async () => {
-						const committed = await this.plugin.runCommit("manual");
-						if (committed) {
-							await this.plugin.doPush();
-						}
+					btn.setButtonText(i18n.commitNowButton).onClick(async () => {
+						await this.plugin.runCommit("manual");
+					})
+				);
+
+			new Setting(container)
+				.setName(i18n.pushNowName)
+				.setDesc(i18n.pushNowDesc)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.pushNowButton).onClick(async () => {
+						await this.plugin.doPush();
 					})
 				);
 

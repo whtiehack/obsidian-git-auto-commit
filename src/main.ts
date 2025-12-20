@@ -44,6 +44,12 @@ export default class AutoGitPlugin extends Plugin {
 			callback: () => this.doPull(),
 		});
 
+		this.addCommand({
+			id: "push-now",
+			name: "Push now",
+			callback: () => this.doPush(),
+		});
+
 		this.setupVaultListeners();
 		this.setupStatusBadges();
 
