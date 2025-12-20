@@ -144,7 +144,7 @@ export async function setRemoteUrl(cwd: string, gitPath: string, url: string): P
 	}
 }
 
-export type FileStatus = "M" | "A" | "D" | "R" | "U" | "?" | "";
+export type FileStatus = "M" | "A" | "R" | "U" | "?" | "";
 
 export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
 	const statusMap = new Map<string, FileStatus>();
@@ -168,8 +168,6 @@ export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map
 				status = "A"; // Untracked = new file
 			} else if (xy.includes("A")) {
 				status = "A"; // Added
-			} else if (xy.includes("D")) {
-				status = "D"; // Deleted
 			} else if (xy.includes("R")) {
 				status = "R"; // Renamed
 			} else if (xy.includes("M") || xy.includes("U")) {

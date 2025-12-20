@@ -17,10 +17,6 @@
 	color: #98c379;
 }
 
-.git-status-badge.deleted {
-	color: #e06c75;
-}
-
 .git-status-badge.renamed {
 	color: #61afef;
 }

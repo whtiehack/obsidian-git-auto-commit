@@ -84,7 +84,6 @@ Colored dots (●) are displayed next to files in the file explorer:
 |-------|--------|
 | ![Modified](badges/modified.svg) Yellow | Modified |
 | ![Added](badges/added.svg) Green | New/Added |
-| ![Deleted](badges/deleted.svg) Red | Deleted |
 | ![Conflict](badges/conflict.svg) Red | Conflict |
 | ![Renamed](badges/renamed.svg) Blue | Renamed |
 

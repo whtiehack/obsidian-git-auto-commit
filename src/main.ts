@@ -394,11 +394,10 @@ export default class AutoGitPlugin extends Plugin {
 
 	private statusPriority(status: FileStatus): number {
 		switch (status) {
-			case "U": return 5; // Conflict - highest priority
-			case "A": return 4;
-			case "M": return 3;
-			case "R": return 2;
-			case "D": return 1;
+			case "U": return 4; // Conflict - highest priority
+			case "A": return 3;
+			case "M": return 2;
+			case "R": return 1;
 			default: return 0;
 		}
 	}
@@ -414,8 +413,6 @@ export default class AutoGitPlugin extends Plugin {
 			badge.classList.add("modified");
 		} else if (status === "A") {
 			badge.classList.add("added");
-		} else if (status === "D") {
-			badge.classList.add("deleted");
 		} else if (status === "R") {
 			badge.classList.add("renamed");
 		}
