@@ -149,7 +149,7 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.setDesc(i18n.gitPathDesc)
 			.addText((text) =>
 				text
-					.setPlaceholder("Path to git executable")
+					.setPlaceholder("git")
 					.setValue(this.plugin.settings.gitPath)
 					.onChange(async (value) => {
 						this.plugin.settings.gitPath = value.trim() || "git";
