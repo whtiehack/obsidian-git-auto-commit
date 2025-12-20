@@ -79,7 +79,7 @@ const en: Translations = {
 	includeFileListDesc: "List changed files in commit message body, one per line.",
 
 	showStatusBadgeName: "Show git status in file explorer",
-	showStatusBadgeDesc: "Display M (modified) / A (new) badges next to files.",
+	showStatusBadgeDesc: "Display colored dots next to changed files and folders.",
 
 	repoStatusName: "Repository status",
 	repoNotInitialized: "Not a git repository",
@@ -129,7 +129,7 @@ const zhCN: Translations = {
 	includeFileListDesc: "在提交消息正文中列出变动的文件，每行一个。",
 
 	showStatusBadgeName: "在文件列表显示 Git 状态",
-	showStatusBadgeDesc: "在文件旁显示 M（已修改）/ A（新文件）标记。",
+	showStatusBadgeDesc: "在变动的文件和文件夹旁显示彩色圆点。",
 
 	repoStatusName: "仓库状态",
 	repoNotInitialized: "尚未初始化为 Git 仓库",
