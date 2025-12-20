@@ -42,11 +42,10 @@ export class AutoGitSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: i18n.settingsTitle });
 
-		// Repository section with placeholder
+		// Repository section
 		if (!Platform.isMobileApp) {
 			containerEl.createEl("h3", { text: i18n.sectionRepository });
 			const repoContainer = containerEl.createDiv();
-			repoContainer.setText("Loading...");
 			this.displayRepoSection(repoContainer);
 		}
 
@@ -63,6 +62,9 @@ export class AutoGitSettingTab extends PluginSettingTab {
 				})
 			);
 
+		// Container for auto-commit related settings (created after toggle for correct order)
+		let autoCommitSettings: HTMLDivElement;
+
 		new Setting(containerEl)
 			.setName(i18n.autoCommitName)
 			.setDesc(i18n.autoCommitDesc)
@@ -71,37 +73,39 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					this.plugin.settings.autoCommit = value;
 					await this.plugin.saveSettings();
 					this.plugin.resetVaultListeners();
-					this.display();
+					autoCommitSettings.style.display = value ? "block" : "none";
 				})
 			);
 
-		if (this.plugin.settings.autoCommit) {
-			new Setting(containerEl)
-				.setName(i18n.debounceName)
-				.setDesc(i18n.debounceDesc)
-				.addText((text) =>
-					text
-						.setPlaceholder("30")
-						.setValue(String(this.plugin.settings.debounceSeconds))
-						.onChange(async (value) => {
-							const num = parseInt(value);
-							if (!isNaN(num) && num >= 5) {
-								this.plugin.settings.debounceSeconds = num;
-								await this.plugin.saveSettings();
-							}
-						})
-				);
+		// Create container after toggle so it appears below
+		autoCommitSettings = containerEl.createDiv();
+		autoCommitSettings.style.display = this.plugin.settings.autoCommit ? "block" : "none";
 
-			new Setting(containerEl)
-				.setName(i18n.autoPushName)
-				.setDesc(i18n.autoPushDesc)
-				.addToggle((toggle) =>
-					toggle.setValue(this.plugin.settings.autoPush).onChange(async (value) => {
-						this.plugin.settings.autoPush = value;
-						await this.plugin.saveSettings();
+		new Setting(autoCommitSettings)
+			.setName(i18n.debounceName)
+			.setDesc(i18n.debounceDesc)
+			.addText((text) =>
+				text
+					.setPlaceholder("30")
+					.setValue(String(this.plugin.settings.debounceSeconds))
+					.onChange(async (value) => {
+						const num = parseInt(value);
+						if (!isNaN(num) && num >= 5) {
+							this.plugin.settings.debounceSeconds = num;
+							await this.plugin.saveSettings();
+						}
 					})
-				);
-		}
+			);
+
+		new Setting(autoCommitSettings)
+			.setName(i18n.autoPushName)
+			.setDesc(i18n.autoPushDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.autoPush).onChange(async (value) => {
+					this.plugin.settings.autoPush = value;
+					await this.plugin.saveSettings();
+				})
+			);
 
 		// Configuration section
 		containerEl.createEl("h3", { text: i18n.sectionConfiguration });
