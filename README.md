@@ -78,14 +78,15 @@ Then copy `main.js`, `manifest.json`, and `styles.css` to your vault's plugin fo
 
 ## Git Status Badges
 
-Colored dots are displayed next to files in the file explorer:
+Colored dots (●) are displayed next to files in the file explorer:
 
 | Color | Status |
 |-------|--------|
-| 🟡 Yellow | Modified |
-| 🟢 Green | New/Added |
-| 🔴 Red | Deleted or Conflict |
-| 🔵 Blue | Renamed |
+| <img src="https://via.placeholder.com/12/d19a66/d19a66.png" width="12" height="12"> Yellow | Modified |
+| <img src="https://via.placeholder.com/12/98c379/98c379.png" width="12" height="12"> Green | New/Added |
+| <img src="https://via.placeholder.com/12/e06c75/e06c75.png" width="12" height="12"> Red | Deleted |
+| <img src="https://via.placeholder.com/12/ff0000/ff0000.png" width="12" height="12"> Red | Conflict |
+| <img src="https://via.placeholder.com/12/61afef/61afef.png" width="12" height="12"> Blue | Renamed |
 
 Folders show the highest priority status of their contents.
 
