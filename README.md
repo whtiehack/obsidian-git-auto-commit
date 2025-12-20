@@ -1,5 +1,7 @@
 # Auto Git Commit
 
+English | [中文](README_zh.md)
+
 An Obsidian plugin that automatically commits vault changes to git.
 
 ## Features
