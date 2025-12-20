@@ -252,7 +252,7 @@ export default class AutoGitPlugin extends Plugin {
 
 			const badge = document.createElement("span");
 			badge.className = "git-status-badge";
-			badge.textContent = status === "A" ? "A" : status;
+			badge.textContent = "●";
 
 			if (status === "M") {
 				badge.classList.add("modified");

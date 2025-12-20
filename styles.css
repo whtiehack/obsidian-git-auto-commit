@@ -1,14 +1,21 @@
+.nav-file-title {
+	display: flex;
+	align-items: center;
+}
+
+.nav-file-title-content {
+	flex: 1;
+}
+
 .git-status-badge {
-	font-size: 10px;
-	font-weight: bold;
-	margin-left: 4px;
-	padding: 0 3px;
-	border-radius: 3px;
-	font-family: monospace;
+	font-size: 12px;
+	margin-left: auto;
+	padding-right: 4px;
+	flex-shrink: 0;
 }
 
 .git-status-badge.modified {
-	color: #e5c07b;
+	color: #d19a66;
 }
 
 .git-status-badge.added {
