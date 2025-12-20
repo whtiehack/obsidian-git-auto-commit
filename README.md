@@ -43,7 +43,7 @@ npm run build
 | Debounce delay (seconds) | Wait time before committing | 30 |
 | Auto push after commit | Push to remote after commit | Off |
 | Commit message template | Custom message format | `vault backup: {{date}} {{time}}` |
-| Include file list in commit body | List changed files in body | Off |
+| Include file list in commit body | List changed files in body | On |
 | Git binary path | Path to git executable | `git` |
 | Ignore .obsidian directory | Exclude config folder from triggers | On |
 

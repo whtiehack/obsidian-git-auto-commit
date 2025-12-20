@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	autoCommit: false,
 	debounceSeconds: 30,
 	commitTemplate: "vault backup: {{date}} {{time}}",
-	includeFileList: false,
+	includeFileList: true,
 	autoPush: false,
 	gitPath: "git",
 	ignoreObsidianDir: true,
