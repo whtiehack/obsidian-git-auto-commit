@@ -1,6 +1,6 @@
-import { EventRef, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
+import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, FileStatus } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, FileStatus } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 
@@ -16,10 +16,12 @@ export default class AutoGitPlugin extends Plugin {
 	private conflictFiles: Set<string> = new Set();
 	private _hasConflicts = false;
 	private resolveConflictCommand: { id: string } | null = null;
+	private ribbonIconEl: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new AutoGitSettingTab(this.app, this));
+		this.updateRibbonButton();
 
 		this.addCommand({
 			id: "commit-now",
@@ -69,6 +71,10 @@ export default class AutoGitPlugin extends Plugin {
 		this.clearStatusBadges();
 		if (this.statusRefreshInterval) {
 			window.clearInterval(this.statusRefreshInterval);
+		}
+		if (this.ribbonIconEl) {
+			this.ribbonIconEl.remove();
+			this.ribbonIconEl = null;
 		}
 	}
 
@@ -227,6 +233,59 @@ export default class AutoGitPlugin extends Plugin {
 			new Notice(t().noticePushed);
 		} catch (e) {
 			new Notice(t().noticePushFailed((e as Error).message));
+		}
+	}
+
+	updateRibbonButton() {
+		if (this.settings.showRibbonButton && !Platform.isMobileApp) {
+			if (!this.ribbonIconEl) {
+				this.ribbonIconEl = this.addRibbonIcon("git-branch", "Git", (evt) => {
+					this.showRibbonMenu(evt);
+				});
+			}
+		} else if (this.ribbonIconEl) {
+			this.ribbonIconEl.remove();
+			this.ribbonIconEl = null;
+		}
+	}
+
+	private showRibbonMenu(evt: MouseEvent) {
+		const i18n = t();
+		const menu = new Menu();
+
+		menu.addItem((item) =>
+			item.setTitle(i18n.ribbonMenuPull).setIcon("download").onClick(() => void this.doPull())
+		);
+		menu.addItem((item) =>
+			item.setTitle(i18n.ribbonMenuCommit).setIcon("check").onClick(() => void this.runCommit("manual"))
+		);
+		menu.addItem((item) =>
+			item.setTitle(i18n.ribbonMenuPush).setIcon("upload").onClick(() => void this.doPush())
+		);
+		menu.addItem((item) =>
+			item.setTitle(i18n.ribbonMenuCommitAndPush).setIcon("upload").onClick(async () => {
+				const committed = await this.runCommit("manual");
+				if (committed) {
+					await this.doPush();
+				}
+			})
+		);
+		menu.addSeparator();
+		menu.addItem((item) =>
+			item.setTitle(i18n.ribbonMenuRevertAll).setIcon("rotate-ccw").onClick(() => void this.doRevert())
+		);
+
+		menu.showAtMouseEvent(evt);
+	}
+
+	private async doRevert() {
+		try {
+			const cwd = this.getVaultPath();
+			await revertAll(cwd, this.settings.gitPath);
+			new Notice(t().noticeReverted);
+			this.refreshStatusBadges();
+		} catch (e) {
+			new Notice(t().noticeRevertFailed((e as Error).message));
 		}
 	}
 

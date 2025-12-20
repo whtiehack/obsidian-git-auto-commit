@@ -33,6 +33,16 @@ type Translations = {
 	showStatusBadgeName: string;
 	showStatusBadgeDesc: string;
 
+	showRibbonButtonName: string;
+	showRibbonButtonDesc: string;
+	ribbonMenuPull: string;
+	ribbonMenuCommit: string;
+	ribbonMenuPush: string;
+	ribbonMenuCommitAndPush: string;
+	ribbonMenuRevertAll: string;
+	noticeReverted: string;
+	noticeRevertFailed: (msg: string) => string;
+
 	// Repository
 	repoStatusName: string;
 	repoNotInitialized: string;
@@ -108,6 +118,16 @@ const en: Translations = {
 	showStatusBadgeName: "Show git status in file explorer",
 	showStatusBadgeDesc: "Display colored dots next to changed files and folders.",
 
+	showRibbonButtonName: "Show ribbon button",
+	showRibbonButtonDesc: "Add a ribbon icon for quick Git actions.",
+	ribbonMenuPull: "Pull",
+	ribbonMenuCommit: "Commit",
+	ribbonMenuPush: "Push",
+	ribbonMenuCommitAndPush: "Commit and push",
+	ribbonMenuRevertAll: "Revert all changes",
+	noticeReverted: "GitAutoCommit: All changes reverted.",
+	noticeRevertFailed: (msg) => `GitAutoCommit: Revert failed - ${msg}`,
+
 	repoStatusName: "Repository status",
 	repoNotInitialized: "Not a git repository",
 	repoInitialized: "Git repository initialized",
@@ -179,6 +199,16 @@ const zhCN: Translations = {
 
 	showStatusBadgeName: "在文件列表显示 Git 状态",
 	showStatusBadgeDesc: "在变动的文件和文件夹旁显示彩色圆点。",
+
+	showRibbonButtonName: "显示侧边栏按钮",
+	showRibbonButtonDesc: "添加快捷 Git 操作按钮。",
+	ribbonMenuPull: "拉取",
+	ribbonMenuCommit: "提交",
+	ribbonMenuPush: "推送",
+	ribbonMenuCommitAndPush: "提交并推送",
+	ribbonMenuRevertAll: "还原所有修改",
+	noticeReverted: "GitAutoCommit: 已还原所有修改。",
+	noticeRevertFailed: (msg) => `GitAutoCommit: 还原失败 - ${msg}`,
 
 	repoStatusName: "仓库状态",
 	repoNotInitialized: "尚未初始化为 Git 仓库",

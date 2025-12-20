@@ -144,6 +144,11 @@ export async function setRemoteUrl(cwd: string, gitPath: string, url: string): P
 	}
 }
 
+export async function revertAll(cwd: string, gitPath: string): Promise<void> {
+	await runGit({ cwd, gitPath, args: ["checkout", "--", "."] });
+	await runGit({ cwd, gitPath, args: ["clean", "-fd"] });
+}
+
 export type FileStatus = "M" | "A" | "R" | "U" | "?" | "";
 
 export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {

@@ -13,6 +13,7 @@ export interface AutoGitSettings {
 	gitPath: string;
 	ignoreObsidianDir: boolean;
 	showStatusBadge: boolean;
+	showRibbonButton: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoGitSettings = {
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	gitPath: "git",
 	ignoreObsidianDir: true,
 	showStatusBadge: true,
+	showRibbonButton: true,
 };
 
 export class AutoGitSettingTab extends PluginSettingTab {
@@ -141,6 +143,17 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					this.plugin.settings.showStatusBadge = value;
 					await this.plugin.saveSettings();
 					this.plugin.refreshStatusBadges();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(i18n.showRibbonButtonName)
+			.setDesc(i18n.showRibbonButtonDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.showRibbonButton).onChange(async (value) => {
+					this.plugin.settings.showRibbonButton = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateRibbonButton();
 				})
 			);
 
