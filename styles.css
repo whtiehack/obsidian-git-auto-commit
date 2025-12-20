@@ -1,0 +1,24 @@
+.git-status-badge {
+	font-size: 10px;
+	font-weight: bold;
+	margin-left: 4px;
+	padding: 0 3px;
+	border-radius: 3px;
+	font-family: monospace;
+}
+
+.git-status-badge.modified {
+	color: #e5c07b;
+}
+
+.git-status-badge.added {
+	color: #98c379;
+}
+
+.git-status-badge.deleted {
+	color: #e06c75;
+}
+
+.git-status-badge.renamed {
+	color: #61afef;
+}

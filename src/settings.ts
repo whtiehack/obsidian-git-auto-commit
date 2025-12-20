@@ -11,6 +11,7 @@ export interface AutoGitSettings {
 	autoPush: boolean;
 	gitPath: string;
 	ignoreObsidianDir: boolean;
+	showStatusBadge: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoGitSettings = {
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	autoPush: false,
 	gitPath: "git",
 	ignoreObsidianDir: true,
+	showStatusBadge: true,
 };
 
 export class AutoGitSettingTab extends PluginSettingTab {
@@ -110,6 +112,17 @@ export class AutoGitSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.includeFileList).onChange(async (value) => {
 					this.plugin.settings.includeFileList = value;
 					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(i18n.showStatusBadgeName)
+			.setDesc(i18n.showStatusBadgeDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.showStatusBadge).onChange(async (value) => {
+					this.plugin.settings.showStatusBadge = value;
+					await this.plugin.saveSettings();
+					this.plugin.refreshStatusBadges();
 				})
 			);
 

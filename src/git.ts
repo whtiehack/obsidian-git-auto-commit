@@ -99,3 +99,51 @@ export async function setRemoteUrl(cwd: string, gitPath: string, url: string): P
 		await runGit({ cwd, gitPath, args: ["remote", "add", "origin", url] });
 	}
 }
+
+export type FileStatus = "M" | "A" | "D" | "R" | "?" | "";
+
+export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
+	const statusMap = new Map<string, FileStatus>();
+
+	try {
+		const stdout = await runGit({ cwd, gitPath, args: ["status", "--porcelain=v1", "-z"] });
+		if (!stdout) return statusMap;
+
+		const parts = stdout.split("\0").filter(Boolean);
+
+		for (let i = 0; i < parts.length; i++) {
+			const entry = parts[i];
+			const xy = entry.slice(0, 2);
+			const filePath = entry.slice(3);
+
+			// Determine status: X is staged, Y is unstaged
+			// We show the most relevant status
+			let status: FileStatus = "";
+
+			if (xy === "??" || xy.includes("?")) {
+				status = "A"; // Untracked = new file
+			} else if (xy.includes("A")) {
+				status = "A"; // Added
+			} else if (xy.includes("D")) {
+				status = "D"; // Deleted
+			} else if (xy.includes("R")) {
+				status = "R"; // Renamed
+			} else if (xy.includes("M") || xy.includes("U")) {
+				status = "M"; // Modified
+			}
+
+			if (filePath && status) {
+				statusMap.set(filePath, status);
+			}
+
+			// Handle rename (has extra path)
+			if (xy.startsWith("R") || xy.startsWith("C")) {
+				i++;
+			}
+		}
+	} catch {
+		// Not a git repo or git error
+	}
+
+	return statusMap;
+}
