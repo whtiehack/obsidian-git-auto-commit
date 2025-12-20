@@ -37,6 +37,12 @@ type Translations = {
 	repoNotInitialized: string;
 	repoInitialized: string;
 	initRepoButton: string;
+	pullNowName: string;
+	pullNowDesc: string;
+	pullNowButton: string;
+	commitPushName: string;
+	commitPushDesc: string;
+	commitPushButton: string;
 	remoteUrlName: string;
 	remoteUrlDesc: string;
 	remoteUrlPlaceholder: string;
@@ -101,6 +107,12 @@ const en: Translations = {
 	repoNotInitialized: "Not a git repository",
 	repoInitialized: "Git repository initialized",
 	initRepoButton: "Initialize repository",
+	pullNowName: "Pull from remote",
+	pullNowDesc: "Fetch and merge changes from the remote repository.",
+	pullNowButton: "Pull",
+	commitPushName: "Commit and push",
+	commitPushDesc: "Commit all changes and push to the remote repository.",
+	commitPushButton: "Commit & Push",
 	remoteUrlName: "Remote URL (origin)",
 	remoteUrlDesc: "Set the remote repository URL for push.",
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",
@@ -163,6 +175,12 @@ const zhCN: Translations = {
 	repoNotInitialized: "尚未初始化为 Git 仓库",
 	repoInitialized: "Git 仓库已初始化",
 	initRepoButton: "初始化仓库",
+	pullNowName: "从远程拉取",
+	pullNowDesc: "从远程仓库获取并合并更改。",
+	pullNowButton: "拉取",
+	commitPushName: "提交并推送",
+	commitPushDesc: "提交所有更改并推送到远程仓库。",
+	commitPushButton: "提交并推送",
 	remoteUrlName: "远程仓库地址 (origin)",
 	remoteUrlDesc: "设置用于推送的远程仓库地址。",
 	remoteUrlPlaceholder: "https://github.com/user/repo.git",

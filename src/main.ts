@@ -213,7 +213,7 @@ export default class AutoGitPlugin extends Plugin {
 		return committed;
 	}
 
-	private async doPush() {
+	async doPush() {
 		try {
 			const cwd = this.getVaultPath();
 			await push(cwd, this.settings.gitPath);

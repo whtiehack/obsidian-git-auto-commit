@@ -1,7 +1,7 @@
 import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
-import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved } from "./git";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, pull } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -200,6 +200,41 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			new Setting(container)
 				.setName(i18n.repoStatusName)
 				.setDesc(i18n.repoInitialized);
+
+			// Pull button
+			new Setting(container)
+				.setName(i18n.pullNowName)
+				.setDesc(i18n.pullNowDesc)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.pullNowButton).onClick(async () => {
+						try {
+							const result = await pull(cwd, gitPath);
+							if (result.hasConflicts) {
+								this.plugin.setHasConflicts(true);
+								new Notice(i18n.noticeConflictDetected);
+								this.display();
+							} else {
+								new Notice(i18n.noticePulled);
+								this.plugin.refreshStatusBadges();
+							}
+						} catch (e) {
+							new Notice(i18n.noticePullFailed((e as Error).message));
+						}
+					})
+				);
+
+			// Commit and push button
+			new Setting(container)
+				.setName(i18n.commitPushName)
+				.setDesc(i18n.commitPushDesc)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.commitPushButton).onClick(async () => {
+						const committed = await this.plugin.runCommit("manual");
+						if (committed) {
+							await this.plugin.doPush();
+						}
+					})
+				);
 
 			let remoteInput = currentRemote;
 
