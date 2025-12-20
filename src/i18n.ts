@@ -97,7 +97,7 @@ const en: Translations = {
 
 	gitPathName: "Git binary path",
 	gitPathDesc: "Path to git executable. Default: git",
-	gitPathPlaceholder: "git",
+	gitPathPlaceholder: "Path to git executable",
 
 	ignoreObsidianName: "Ignore config directory",
 	ignoreObsidianDesc: "Exclude Obsidian config folder from triggering auto-commits.",
@@ -169,7 +169,7 @@ const zhCN: Translations = {
 
 	gitPathName: "Git 可执行文件路径",
 	gitPathDesc: "git 的路径，默认: git",
-	gitPathPlaceholder: "git",
+	gitPathPlaceholder: "git 可执行文件路径",
 
 	ignoreObsidianName: "忽略配置目录",
 	ignoreObsidianDesc: "排除 Obsidian 配置文件夹触发自动提交。",
