@@ -8,6 +8,7 @@ An Obsidian plugin that automatically commits vault changes to git.
 - **Auto Pull**: Optionally pull from remote when Obsidian opens
 - **Auto Push**: Optionally push to remote after commit
 - **Manual Operations**: Commands for manual pull, commit, and push
+- **Ribbon Button**: Quick access menu for Git actions (pull, commit, push, revert)
 - **Conflict Detection**: Detect merge conflicts and pause auto-commit until resolved
 - **Git Status Badges**: Show colored dots next to modified/new files in file explorer
 - **Repository Management**: Initialize repo and configure remote URL from settings
@@ -64,6 +65,7 @@ Then copy `main.js`, `manifest.json`, and `styles.css` to your vault's plugin fo
 | Commit message template | Custom message format | `vault backup: {{date}} {{time}}` |
 | Include file list in commit body | List changed files in body | On |
 | Show git status in file explorer | Display colored dots next to changed files | On |
+| Show ribbon button | Add Git actions menu to left ribbon | On |
 | Git binary path | Path to git executable | `git` |
 | Ignore .obsidian directory | Exclude config folder from triggers | On |
 
