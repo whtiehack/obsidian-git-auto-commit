@@ -13,20 +13,24 @@ An Obsidian plugin that automatically commits vault changes to git.
 
 ## Installation
 
-### Manual Installation
+### From GitHub Releases (Recommended)
 
-1. Download `main.js` and `manifest.json` from releases
-2. Create folder `.obsidian/plugins/auto-git-commit/` in your vault
-3. Copy downloaded files into the folder
-4. Enable the plugin in Obsidian settings
+1. Go to [Releases](https://github.com/whtiehack/obsidian-git-auto-commit/releases)
+2. Download `main.js` and `manifest.json` from the latest release
+3. Create folder `<vault>/.obsidian/plugins/auto-git-commit/`
+4. Copy downloaded files into the folder
+5. Restart Obsidian and enable the plugin in Settings → Community plugins
 
 ### Build from Source
 
 ```bash
-cd .obsidian/plugins/auto-git-commit
+git clone https://github.com/whtiehack/obsidian-git-auto-commit.git
+cd obsidian-git-auto-commit
 npm install
 npm run build
 ```
+
+Then copy `main.js` and `manifest.json` to your vault's plugin folder.
 
 ## Commands
 
