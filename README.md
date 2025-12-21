@@ -2,7 +2,7 @@
 
 English | [中文](README_zh.md)
 
-A lightweight Obsidian plugin that automatically commits vault changes to git. **Desktop only**.
+A lightweight Obsidian plugin that automatically commits vault changes to git. **Desktop only** (mobile users can access version history via git web interfaces).
 
 > **Design Philosophy**: This plugin stays minimal and focused. It does one thing well: automatic git commits. No bloat, no complexity—just simple, reliable version control for your notes.
 
@@ -125,7 +125,7 @@ Folders show the highest priority status of their contents.
 - **Desktop only** (Windows / macOS / Linux)
 - Git installed and accessible
 
-> **Why no mobile support?** Mobile platforms lack native Git. While [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git) exists, it has significant limitations: CORS restrictions requiring proxy servers, Buffer compatibility issues, and severe performance problems (large repos can take 100+ seconds or crash). We'll revisit mobile support when isomorphic-git matures.
+> **Why no mobile support?** Mobile platforms lack native Git. While [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git) exists, it has significant limitations: CORS restrictions requiring proxy servers, Buffer compatibility issues, and severe performance problems. For mobile users, we recommend using your git hosting provider's web interface or mobile app (GitHub, GitLab, Gitea, etc.) to view and manage your vault's version history.
 
 ## License
 

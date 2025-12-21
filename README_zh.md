@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-一个轻量级的 Obsidian 插件，自动将仓库变更提交到 Git。**仅支持桌面端**。
+一个轻量级的 Obsidian 插件，自动将仓库变更提交到 Git。**仅支持桌面端**（移动端用户可通过 Git 网页端查看版本历史）。
 
 > **设计理念**：本插件保持克制，专注核心功能。只做好一件事：自动 Git 提交。无臃肿、无复杂——为你的笔记提供简单可靠的版本控制。
 
@@ -125,7 +125,7 @@ npm run build
 - **仅支持桌面端**（Windows / macOS / Linux）
 - 已安装并可访问 Git
 
-> **为何不支持移动端？** 移动平台没有原生 Git。虽然有 [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git)，但它存在明显限制：CORS 限制需要代理服务器、Buffer 兼容性问题、以及严重的性能问题（大型仓库可能需要 100 多秒或直接崩溃）。等 isomorphic-git 更成熟后我们会重新考虑移动端支持。
+> **为何不支持移动端？** 移动平台没有原生 Git。虽然有 [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git)，但它存在明显限制：CORS 限制需要代理服务器、Buffer 兼容性问题、以及严重的性能问题。移动端用户可以通过 Git 托管平台的网页版或 App（GitHub、GitLab、Gitea 等）来查看和管理仓库的版本历史。
 
 ## 许可证
 

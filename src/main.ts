@@ -113,7 +113,7 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<AutoGitSettings>);
 	}
 
 	async saveSettings() {
@@ -322,14 +322,16 @@ export default class AutoGitPlugin extends Plugin {
 				return;
 			}
 
-			new RevertConfirmModal(this.app, changedFiles, async () => {
-				try {
-					await revertAll(cwd, this.settings.gitPath);
-					new Notice(t().noticeReverted);
-					this.refreshStatusBadges();
-				} catch (e) {
-					new Notice(t().noticeRevertFailed((e as Error).message));
-				}
+			new RevertConfirmModal(this.app, changedFiles, () => {
+				void (async () => {
+					try {
+						await revertAll(cwd, this.settings.gitPath);
+						new Notice(t().noticeReverted);
+						this.refreshStatusBadges();
+					} catch (e) {
+						new Notice(t().noticeRevertFailed((e as Error).message));
+					}
+				})();
 			}).open();
 		} catch (e) {
 			new Notice(t().noticeRevertFailed((e as Error).message));
@@ -351,15 +353,17 @@ export default class AutoGitPlugin extends Plugin {
 					item.setTitle(t().revertFileMenu)
 						.setIcon("rotate-ccw")
 						.onClick(() => {
-							new RevertConfirmModal(this.app, [filePath], async () => {
-								try {
-									const cwd = this.getVaultPath();
-									await revertFile(cwd, this.settings.gitPath, filePath);
-									new Notice(t().noticeFileReverted);
-									this.refreshStatusBadges();
-								} catch (e) {
-									new Notice(t().noticeFileRevertFailed((e as Error).message));
-								}
+							new RevertConfirmModal(this.app, [filePath], () => {
+								void (async () => {
+									try {
+										const cwd = this.getVaultPath();
+										await revertFile(cwd, this.settings.gitPath, filePath);
+										new Notice(t().noticeFileReverted);
+										this.refreshStatusBadges();
+									} catch (e) {
+										new Notice(t().noticeFileRevertFailed((e as Error).message));
+									}
+								})();
 							}).open();
 						});
 				});
