@@ -6,6 +6,7 @@ An Obsidian plugin that automatically commits vault changes to git.
 
 ## Features
 
+- **Setup Wizard**: Guides new users through repository setup based on current state
 - **Auto Commit**: Automatically commit changes after file modifications (with debounce)
 - **Auto Pull**: Optionally pull from remote when Obsidian opens
 - **Auto Push**: Optionally push to remote after commit
@@ -70,6 +71,18 @@ Then copy `main.js`, `manifest.json`, and `styles.css` to your vault's plugin fo
 | Show ribbon button | Add Git actions menu to left ribbon | On |
 | Git binary path | Path to git executable | `git` |
 | Ignore .obsidian directory | Exclude config folder from triggers | On |
+
+### Setup (for new users)
+
+The plugin detects your repository state and shows relevant options:
+
+| State | Description | Options |
+|-------|-------------|---------|
+| Not a repo | Vault is not a git repository | Connect to remote / Create new repo / Local only |
+| Empty repo | Git initialized but no commits | Connect to remote / Create new repo |
+| Local only | Has commits but no remote | Add remote and push |
+| No upstream | Remote configured but no upstream branch | Set upstream |
+| Ready | Fully configured | (Setup section hidden) |
 
 ### Repository
 
