@@ -1,6 +1,6 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, FileStatus } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, FileStatus, getChangedFilesSync, commitAndPushSync } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 
@@ -17,6 +17,7 @@ export default class AutoGitPlugin extends Plugin {
 	private _hasConflicts = false;
 	private resolveConflictCommand: { id: string } | null = null;
 	private ribbonIconEl: HTMLElement | null = null;
+	private beforeUnloadHandler: (() => void) | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -61,6 +62,33 @@ export default class AutoGitPlugin extends Plugin {
 			window.setTimeout(() => { void this.doPull(); }, 1000);
 		}
 
+		// Setup beforeunload handler for commit on close
+		if (!Platform.isMobileApp) {
+			this.beforeUnloadHandler = () => {
+				if (this.settings.commitOnClose) {
+					const cwd = this.getVaultPathSafe();
+					if (cwd) {
+						const changedFiles = getChangedFilesSync(cwd, this.settings.gitPath);
+						if (changedFiles.length > 0) {
+							const now = new Date();
+							const subject = renderTemplate(this.settings.commitTemplate, {
+								date: now.toISOString().slice(0, 10),
+								time: now.toTimeString().slice(0, 8),
+								files: changedFiles.slice(0, 5).join(", ") + (changedFiles.length > 5 ? "..." : ""),
+								count: String(changedFiles.length),
+							});
+							let message = subject;
+							if (this.settings.includeFileList) {
+								message += "\n\n" + changedFiles.join("\n");
+							}
+							commitAndPushSync(cwd, this.settings.gitPath, message);
+						}
+					}
+				}
+			};
+			window.addEventListener("beforeunload", this.beforeUnloadHandler);
+		}
+
 		// Check for existing conflicts on load
 		void this.checkConflicts();
 	}
@@ -75,6 +103,10 @@ export default class AutoGitPlugin extends Plugin {
 		if (this.ribbonIconEl) {
 			this.ribbonIconEl.remove();
 			this.ribbonIconEl = null;
+		}
+		if (this.beforeUnloadHandler) {
+			window.removeEventListener("beforeunload", this.beforeUnloadHandler);
+			this.beforeUnloadHandler = null;
 		}
 	}
 

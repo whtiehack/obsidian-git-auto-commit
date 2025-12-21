@@ -10,6 +10,7 @@ export interface AutoGitSettings {
 	includeFileList: boolean;
 	autoPush: boolean;
 	autoPullOnOpen: boolean;
+	commitOnClose: boolean;
 	gitPath: string;
 	ignoreObsidianDir: boolean;
 	showStatusBadge: boolean;
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	includeFileList: true,
 	autoPush: false,
 	autoPullOnOpen: false,
+	commitOnClose: false,
 	gitPath: "git",
 	ignoreObsidianDir: true,
 	showStatusBadge: true,
@@ -66,6 +68,16 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.autoPullOnOpen).onChange(async (value) => {
 					this.plugin.settings.autoPullOnOpen = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(i18n.commitOnCloseName)
+			.setDesc(i18n.commitOnCloseDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.commitOnClose).onChange(async (value) => {
+					this.plugin.settings.commitOnClose = value;
 					await this.plugin.saveSettings();
 				})
 			);

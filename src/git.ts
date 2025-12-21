@@ -1,4 +1,4 @@
-import { execFile } from "child_process";
+import { execFile, execFileSync } from "child_process";
 import { promises as fs } from "fs";
 import * as path from "path";
 
@@ -6,6 +6,15 @@ interface GitRunOptions {
 	cwd: string;
 	gitPath: string;
 	args: string[];
+}
+
+function runGitSync({ cwd, gitPath, args }: GitRunOptions): string {
+	return execFileSync(gitPath, args, {
+		cwd,
+		windowsHide: true,
+		env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+		encoding: "utf8",
+	});
 }
 
 function runGit({ cwd, gitPath, args }: GitRunOptions): Promise<string> {
@@ -389,4 +398,34 @@ export async function setUpstream(cwd: string, gitPath: string): Promise<void> {
 async function getCurrentBranch(cwd: string, gitPath: string): Promise<string> {
 	const stdout = await runGit({ cwd, gitPath, args: ["rev-parse", "--abbrev-ref", "HEAD"] });
 	return stdout.trim();
+}
+
+// Synchronous version for use during app close
+export function getChangedFilesSync(cwd: string, gitPath: string): string[] {
+	try {
+		const stdout = runGitSync({ cwd, gitPath, args: ["status", "--porcelain=v1", "-z"] });
+		if (!stdout) return [];
+		const parts = stdout.split("\0").filter(Boolean);
+		const files: string[] = [];
+		for (let i = 0; i < parts.length; i++) {
+			const entry = parts[i];
+			const statusCode = entry.slice(0, 2);
+			const filePath = entry.slice(3);
+			if (filePath) files.push(filePath);
+			if (statusCode.startsWith("R") || statusCode.startsWith("C")) i++;
+		}
+		return [...new Set(files)];
+	} catch {
+		return [];
+	}
+}
+
+export function commitAndPushSync(cwd: string, gitPath: string, message: string): void {
+	try {
+		runGitSync({ cwd, gitPath, args: ["add", "-A"] });
+		runGitSync({ cwd, gitPath, args: ["commit", "-m", message] });
+		runGitSync({ cwd, gitPath, args: ["push"] });
+	} catch {
+		// Ignore errors during close
+	}
 }

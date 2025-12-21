@@ -17,6 +17,9 @@ type Translations = {
 	autoPullOnOpenName: string;
 	autoPullOnOpenDesc: string;
 
+	commitOnCloseName: string;
+	commitOnCloseDesc: string;
+
 	templateName: string;
 	templateDesc: string;
 
@@ -130,6 +133,9 @@ const en: Translations = {
 	autoPullOnOpenName: "Auto pull on open",
 	autoPullOnOpenDesc: "Pull from remote when Obsidian opens.",
 
+	commitOnCloseName: "Commit and push on close",
+	commitOnCloseDesc: "Commit all changes and push when Obsidian closes. Note: This may cause a brief delay when closing.",
+
 	templateName: "Commit message template",
 	templateDesc: "Variables: {{date}}, {{time}}, {{files}}, {{count}}",
 
@@ -238,6 +244,9 @@ const zhCN: Translations = {
 
 	autoPullOnOpenName: "打开时自动拉取",
 	autoPullOnOpenDesc: "打开 Obsidian 时自动从远程仓库拉取。",
+
+	commitOnCloseName: "关闭时提交并推送",
+	commitOnCloseDesc: "关闭 Obsidian 时自动提交所有更改并推送。注意：这可能导致关闭时短暂卡顿。",
 
 	templateName: "提交消息模板",
 	templateDesc: "变量: {{date}}, {{time}}, {{files}}, {{count}}",
