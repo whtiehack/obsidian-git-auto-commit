@@ -15,6 +15,7 @@ export interface AutoGitSettings {
 	ignoreObsidianDir: boolean;
 	showStatusBadge: boolean;
 	showRibbonButton: boolean;
+	badgeRefreshInterval: number; // 0 = disabled, otherwise seconds
 }
 
 export const DEFAULT_SETTINGS: AutoGitSettings = {
@@ -29,6 +30,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	ignoreObsidianDir: true,
 	showStatusBadge: true,
 	showRibbonButton: true,
+	badgeRefreshInterval: 0, // 0 = disabled (event-driven only), otherwise seconds
 };
 
 export class AutoGitSettingTab extends PluginSettingTab {
@@ -162,6 +164,23 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.updateStatusBadges();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName(i18n.badgeRefreshIntervalName)
+			.setDesc(i18n.badgeRefreshIntervalDesc)
+			.addText((text) =>
+				text
+					.setPlaceholder("10")
+					.setValue(String(this.plugin.settings.badgeRefreshInterval))
+					.onChange(async (value) => {
+						const num = parseInt(value);
+						if (!isNaN(num) && num >= 0) {
+							this.plugin.settings.badgeRefreshInterval = num;
+							await this.plugin.saveSettings();
+							this.plugin.updateStatusBadges();
+						}
+					})
 			);
 
 		new Setting(containerEl)

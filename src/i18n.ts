@@ -36,6 +36,9 @@ type Translations = {
 	showStatusBadgeName: string;
 	showStatusBadgeDesc: string;
 
+	badgeRefreshIntervalName: string;
+	badgeRefreshIntervalDesc: string;
+
 	showRibbonButtonName: string;
 	showRibbonButtonDesc: string;
 	ribbonMenuPull: string;
@@ -162,6 +165,9 @@ const en: Translations = {
 	showStatusBadgeName: "Show git status in file explorer",
 	showStatusBadgeDesc: "Display colored dots next to changed files and folders.",
 
+	badgeRefreshIntervalName: "Badge refresh interval (seconds)",
+	badgeRefreshIntervalDesc: "Detect external git changes (e.g. terminal commands). Set to 0 if you only use Obsidian.",
+
 	showRibbonButtonName: "Show ribbon button",
 	showRibbonButtonDesc: "Add a ribbon icon for quick Git actions.",
 	ribbonMenuPull: "Pull",
@@ -282,6 +288,9 @@ const zhCN: Translations = {
 
 	showStatusBadgeName: "在文件列表显示 Git 状态",
 	showStatusBadgeDesc: "在变动的文件和文件夹旁显示彩色圆点。",
+
+	badgeRefreshIntervalName: "状态刷新间隔（秒）",
+	badgeRefreshIntervalDesc: "用于检测外部 git 操作（如终端命令）。若只在 Obsidian 内操作可设为 0。",
 
 	showRibbonButtonName: "显示侧边栏按钮",
 	showRibbonButtonDesc: "添加快捷 Git 操作按钮。",

@@ -1,4 +1,4 @@
-import { execFile, execFileSync } from "child_process";
+import { execFile, execFileSync, spawn } from "child_process";
 import { promises as fs } from "fs";
 import * as path from "path";
 
@@ -436,12 +436,27 @@ export function getChangedFilesSync(cwd: string, gitPath: string): string[] {
 	}
 }
 
-export function commitAndPushSync(cwd: string, gitPath: string, message: string): void {
+// Sync commit only, then spawn detached push process
+export function commitSyncAndPushDetached(cwd: string, gitPath: string, message: string): void {
 	try {
 		runGitSync({ cwd, gitPath, args: ["add", "-A"] });
 		runGitSync({ cwd, gitPath, args: ["commit", "-m", message] });
-		runGitSync({ cwd, gitPath, args: ["push"] });
 	} catch {
-		// Ignore errors during close
+		// Commit failed or nothing to commit
+		return;
+	}
+
+	// Spawn detached push process that continues after parent exits
+	try {
+		const child = spawn(gitPath, ["push"], {
+			cwd,
+			detached: true,
+			stdio: "ignore",
+			windowsHide: true,
+			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+		});
+		child.unref();
+	} catch {
+		// Ignore spawn errors
 	}
 }

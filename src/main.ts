@@ -1,6 +1,6 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, revertFile, FileStatus, getChangedFilesSync, commitAndPushSync } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, revertFile, FileStatus, getChangedFilesSync, commitSyncAndPushDetached } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 import { RevertConfirmModal } from "./modals";
@@ -15,11 +15,13 @@ export default class AutoGitPlugin extends Plugin {
 	private statusRefreshInterval: number | null = null;
 	private statusRefreshTimeout: number | null = null;
 	private currentStatuses: Map<string, FileStatus> = new Map();
+	private previousStatuses: Map<string, FileStatus> = new Map();
 	private conflictFiles: Set<string> = new Set();
 	private _hasConflicts = false;
 	private resolveConflictCommand: { id: string } | null = null;
 	private ribbonIconEl: HTMLElement | null = null;
 	private beforeUnloadHandler: (() => void) | null = null;
+	private mutationObserver: MutationObserver | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -56,8 +58,12 @@ export default class AutoGitPlugin extends Plugin {
 		});
 
 		this.setupVaultListeners();
-		this.updateStatusBadges();
 		this.setupFileContextMenu();
+
+		// Wait for layout ready before initializing badges
+		this.app.workspace.onLayoutReady(() => {
+			this.updateStatusBadges();
+		});
 
 		// Auto pull on open
 		if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
@@ -84,7 +90,8 @@ export default class AutoGitPlugin extends Plugin {
 							if (this.settings.includeFileList) {
 								message += "\n\n" + changedFiles.join("\n");
 							}
-							commitAndPushSync(cwd, this.settings.gitPath, message);
+							// Sync commit + detached push (push runs in background after app closes)
+							commitSyncAndPushDetached(cwd, this.settings.gitPath, message);
 						}
 					}
 				}
@@ -107,6 +114,10 @@ export default class AutoGitPlugin extends Plugin {
 		if (this.statusRefreshTimeout) {
 			window.clearTimeout(this.statusRefreshTimeout);
 			this.statusRefreshTimeout = null;
+		}
+		if (this.mutationObserver) {
+			this.mutationObserver.disconnect();
+			this.mutationObserver = null;
 		}
 		if (this.ribbonIconEl) {
 			this.ribbonIconEl.remove();
@@ -138,8 +149,6 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	private setupVaultListeners() {
-		if (!this.settings.autoCommit) return;
-
 		if (Platform.isMobileApp) {
 			new Notice(t().noticeMobileNotSupported);
 			return;
@@ -157,8 +166,13 @@ export default class AutoGitPlugin extends Plugin {
 		if (!(file instanceof TFile)) return;
 		if (this.shouldIgnore(file.path)) return;
 
-		this.scheduleCommit();
+		// Always refresh badges on file change
 		this.scheduleStatusRefresh();
+
+		// Only schedule commit if autoCommit is enabled
+		if (this.settings.autoCommit) {
+			this.scheduleCommit();
+		}
 	}
 
 	private shouldIgnore(path: string): boolean {
@@ -450,6 +464,11 @@ export default class AutoGitPlugin extends Plugin {
 			window.clearTimeout(this.statusRefreshTimeout);
 			this.statusRefreshTimeout = null;
 		}
+		// Disconnect existing observer
+		if (this.mutationObserver) {
+			this.mutationObserver.disconnect();
+			this.mutationObserver = null;
+		}
 
 		if (Platform.isMobileApp || !this.settings.showStatusBadge) {
 			this.clearStatusBadges();
@@ -459,10 +478,59 @@ export default class AutoGitPlugin extends Plugin {
 		// Initial refresh
 		this.refreshStatusBadges();
 
-		// Refresh every 5 seconds
-		this.statusRefreshInterval = window.setInterval(() => {
-			this.refreshStatusBadges();
-		}, 5000);
+		// Setup polling if interval > 0
+		const interval = this.settings.badgeRefreshInterval;
+		if (interval > 0) {
+			this.statusRefreshInterval = window.setInterval(() => {
+				this.refreshStatusBadges();
+			}, interval * 1000);
+		}
+
+		// Setup MutationObserver for virtualized file list
+		this.setupMutationObserver();
+	}
+
+	private setupMutationObserver() {
+		// Find file explorer container
+		const container = document.querySelector(".nav-files-container");
+		if (!container) return;
+
+		this.mutationObserver = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				mutation.addedNodes.forEach((node) => {
+					if (node instanceof HTMLElement) {
+						this.applyBadgesToNewNodes(node);
+					}
+				});
+			}
+		});
+
+		this.mutationObserver.observe(container, {
+			childList: true,
+			subtree: true,
+		});
+	}
+
+	private applyBadgesToNewNodes(node: HTMLElement) {
+		// Check if node itself is a file/folder title
+		const items = node.matches(".nav-file-title, .nav-folder-title")
+			? [node]
+			: Array.from(node.querySelectorAll(".nav-file-title, .nav-folder-title"));
+
+		const allStatuses = this.getMergedStatuses();
+
+		for (const item of items) {
+			const path = item.getAttribute("data-path");
+			if (!path) continue;
+
+			// Skip if already has badge
+			if (item.querySelector(".git-status-badge")) continue;
+
+			const status = allStatuses.get(path);
+			if (status) {
+				this.addBadgeToElement(item, status);
+			}
+		}
 	}
 
 	private scheduleStatusRefresh() {
@@ -488,7 +556,12 @@ export default class AutoGitPlugin extends Plugin {
 
 		getFileStatuses(cwd, this.settings.gitPath).then((statuses) => {
 			this.currentStatuses = statuses;
-			this.updateBadgesInDOM();
+			// Use full update if first time, otherwise use diff
+			if (this.previousStatuses.size === 0) {
+				this.updateBadgesInDOM();
+			} else {
+				this.updateBadgesDiff();
+			}
 		}).catch(() => {
 			// Ignore errors
 		});
@@ -497,6 +570,67 @@ export default class AutoGitPlugin extends Plugin {
 	private clearStatusBadges() {
 		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
 		this.currentStatuses.clear();
+		this.previousStatuses.clear();
+	}
+
+	private getMergedStatuses(): Map<string, FileStatus> {
+		const merged = new Map(this.currentStatuses);
+		this.conflictFiles.forEach((file) => {
+			merged.set(file, "U" as FileStatus);
+		});
+
+		// Add folder statuses
+		const folderStatuses = this.calculateFolderStatuses(merged);
+		folderStatuses.forEach((status, path) => {
+			merged.set(path, status);
+		});
+
+		return merged;
+	}
+
+	private updateBadgesDiff() {
+		const newStatuses = this.getMergedStatuses();
+
+		// Find paths to remove (in previous but not in new, or status changed)
+		for (const [path, oldStatus] of this.previousStatuses) {
+			const newStatus = newStatuses.get(path);
+			if (!newStatus || newStatus !== oldStatus) {
+				this.removeBadgeFromPath(path);
+			}
+		}
+
+		// Find paths to add/update (in new but not in previous, or status changed)
+		for (const [path, status] of newStatuses) {
+			const oldStatus = this.previousStatuses.get(path);
+			if (oldStatus !== status) {
+				this.updateBadgeForPath(path, status);
+			}
+		}
+
+		this.previousStatuses = newStatuses;
+	}
+
+	private removeBadgeFromPath(path: string) {
+		const escapedPath = CSS.escape(path);
+		const selector = `.nav-file-title[data-path="${escapedPath}"], .nav-folder-title[data-path="${escapedPath}"]`;
+		const el = document.querySelector(selector);
+		if (el) {
+			const badge = el.querySelector(".git-status-badge");
+			if (badge) badge.remove();
+		}
+	}
+
+	private updateBadgeForPath(path: string, status: FileStatus) {
+		const escapedPath = CSS.escape(path);
+		const selector = `.nav-file-title[data-path="${escapedPath}"], .nav-folder-title[data-path="${escapedPath}"]`;
+		const el = document.querySelector(selector);
+		if (el) {
+			// Remove existing badge if any
+			const existingBadge = el.querySelector(".git-status-badge");
+			if (existingBadge) existingBadge.remove();
+			// Add new badge
+			this.addBadgeToElement(el, status);
+		}
 	}
 
 	private updateBadgesInDOM() {
@@ -533,6 +667,9 @@ export default class AutoGitPlugin extends Plugin {
 				this.addBadgeToElement(item, status);
 			}
 		});
+
+		// Update previous statuses for diff tracking
+		this.previousStatuses = this.getMergedStatuses();
 	}
 
 	private calculateFolderStatuses(statuses: Map<string, FileStatus>): Map<string, FileStatus> {
