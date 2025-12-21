@@ -12,6 +12,7 @@ An Obsidian plugin that automatically commits vault changes to git.
 - **Auto Push**: Optionally push to remote after commit
 - **Manual Operations**: Commands for manual pull, commit, and push
 - **Ribbon Button**: Quick access menu for Git actions (pull, commit, push, revert)
+- **File Context Menu**: Right-click modified files to revert individual changes
 - **Conflict Detection**: Detect merge conflicts and pause auto-commit until resolved
 - **Git Status Badges**: Show colored dots next to modified/new files in file explorer
 - **Repository Management**: Initialize repo and configure remote URL from settings
