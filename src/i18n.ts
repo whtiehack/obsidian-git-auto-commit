@@ -46,6 +46,13 @@ type Translations = {
 	noticeReverted: string;
 	noticeRevertFailed: (msg: string) => string;
 
+	// Revert confirmation
+	revertConfirmTitle: string;
+	revertConfirmDesc: string;
+	revertConfirmButton: string;
+	revertCancelButton: string;
+	revertNoChanges: string;
+
 	// Setup wizard
 	sectionSetup: string;
 	setupNotRepo: string;
@@ -162,6 +169,12 @@ const en: Translations = {
 	noticeReverted: "GitAutoCommit: All changes reverted.",
 	noticeRevertFailed: (msg) => `GitAutoCommit: Revert failed - ${msg}`,
 
+	revertConfirmTitle: "Revert All Changes",
+	revertConfirmDesc: "The following files will be reverted:",
+	revertConfirmButton: "Revert",
+	revertCancelButton: "Cancel",
+	revertNoChanges: "No changes to revert.",
+
 	sectionSetup: "Setup",
 	setupNotRepo: "Not a Git repository",
 	setupEmptyRepo: "Empty repository (no commits)",
@@ -273,6 +286,12 @@ const zhCN: Translations = {
 	ribbonMenuRevertAll: "还原所有修改",
 	noticeReverted: "GitAutoCommit: 已还原所有修改。",
 	noticeRevertFailed: (msg) => `GitAutoCommit: 还原失败 - ${msg}`,
+
+	revertConfirmTitle: "还原所有修改",
+	revertConfirmDesc: "以下文件将被还原：",
+	revertConfirmButton: "还原",
+	revertCancelButton: "取消",
+	revertNoChanges: "没有可还原的修改。",
 
 	sectionSetup: "初始设置",
 	setupNotRepo: "尚未初始化为 Git 仓库",

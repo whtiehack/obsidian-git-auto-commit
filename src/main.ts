@@ -3,6 +3,7 @@ import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings
 import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, FileStatus, getChangedFilesSync, commitAndPushSync } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
+import { RevertConfirmModal } from "./modals";
 
 export default class AutoGitPlugin extends Plugin {
 	settings: AutoGitSettings = DEFAULT_SETTINGS;
@@ -313,9 +314,22 @@ export default class AutoGitPlugin extends Plugin {
 	private async doRevert() {
 		try {
 			const cwd = this.getVaultPath();
-			await revertAll(cwd, this.settings.gitPath);
-			new Notice(t().noticeReverted);
-			this.refreshStatusBadges();
+			const changedFiles = await getChangedFiles(cwd, this.settings.gitPath);
+
+			if (changedFiles.length === 0) {
+				new Notice(t().revertNoChanges);
+				return;
+			}
+
+			new RevertConfirmModal(this.app, changedFiles, async () => {
+				try {
+					await revertAll(cwd, this.settings.gitPath);
+					new Notice(t().noticeReverted);
+					this.refreshStatusBadges();
+				} catch (e) {
+					new Notice(t().noticeRevertFailed((e as Error).message));
+				}
+			}).open();
 		} catch (e) {
 			new Notice(t().noticeRevertFailed((e as Error).message));
 		}
