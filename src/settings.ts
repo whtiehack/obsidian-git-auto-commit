@@ -1,7 +1,7 @@
 import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
-import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, pull } from "./git";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, pull, detectRepoState, RepoState, connectToRemote, initAndPush, setUpstream } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -43,6 +43,12 @@ export class AutoGitSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl).setName(i18n.settingsTitle).setHeading();
+
+		// Setup wizard section (for new users)
+		if (!Platform.isMobileApp) {
+			const setupContainer = containerEl.createDiv();
+			void this.displaySetupSection(setupContainer);
+		}
 
 		// Repository section
 		if (!Platform.isMobileApp) {
@@ -179,6 +185,153 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	private async displaySetupSection(container: HTMLElement): Promise<void> {
+		const i18n = t();
+		const cwd = this.plugin.getVaultPathSafe();
+		if (!cwd) {
+			container.empty();
+			return;
+		}
+
+		const gitPath = this.plugin.settings.gitPath;
+		const state = await detectRepoState(cwd, gitPath);
+
+		container.empty();
+
+		// Only show setup section if not ready
+		if (state === "ready") {
+			return;
+		}
+
+		new Setting(container).setName(i18n.sectionSetup).setHeading();
+
+		// Show current state
+		const stateLabels: Record<RepoState, string> = {
+			"not-a-repo": i18n.setupNotRepo,
+			"empty-repo": i18n.setupEmptyRepo,
+			"local-only": i18n.setupLocalOnly,
+			"remote-no-upstream": i18n.setupNoUpstream,
+			"ready": i18n.setupReady,
+		};
+
+		new Setting(container)
+			.setName(i18n.repoStatusName)
+			.setDesc(stateLabels[state]);
+
+		let remoteInput = "";
+
+		if (state === "not-a-repo" || state === "empty-repo") {
+			// Option 1: Connect to existing remote
+			new Setting(container)
+				.setName(i18n.wizardConnectRemote)
+				.setDesc(i18n.wizardConnectRemoteDesc)
+				.addText((text) =>
+					text
+						.setPlaceholder(i18n.remoteUrlPlaceholder)
+						.onChange((value) => {
+							remoteInput = value.trim();
+						})
+				)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.wizardConnectButton).onClick(async () => {
+						if (!remoteInput) return;
+						try {
+							const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
+							await connectToRemote(cwd, gitPath, remoteInput, ignoreDir);
+							new Notice(i18n.noticeConnected);
+							this.display();
+							this.plugin.refreshStatusBadges();
+						} catch (e) {
+							new Notice(i18n.noticeConnectFailed((e as Error).message));
+						}
+					})
+				);
+
+			// Option 2: Create new repo and push to empty remote
+			new Setting(container)
+				.setName(i18n.wizardInitAndPush)
+				.setDesc(i18n.wizardInitAndPushDesc)
+				.addText((text) =>
+					text
+						.setPlaceholder(i18n.remoteUrlPlaceholder)
+						.onChange((value) => {
+							remoteInput = value.trim();
+						})
+				)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.wizardInitAndPushButton).onClick(async () => {
+						if (!remoteInput) return;
+						try {
+							const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
+							await initAndPush(cwd, gitPath, remoteInput, "main", ignoreDir);
+							new Notice(i18n.noticeInitPushSuccess);
+							this.display();
+							this.plugin.refreshStatusBadges();
+						} catch (e) {
+							new Notice(i18n.noticeInitPushFailed((e as Error).message));
+						}
+					})
+				);
+
+			// Option 3: Local only
+			new Setting(container)
+				.setName(i18n.wizardLocalOnly)
+				.setDesc(i18n.wizardLocalOnlyDesc)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.wizardLocalOnlyButton).onClick(async () => {
+						try {
+							await initRepo(cwd, gitPath);
+							new Notice(i18n.noticeRepoInitialized);
+							this.display();
+						} catch (e) {
+							new Notice((e as Error).message);
+						}
+					})
+				);
+		} else if (state === "local-only") {
+			// Has commits but no remote - offer to add remote
+			new Setting(container)
+				.setName(i18n.wizardInitAndPush)
+				.setDesc(i18n.wizardInitAndPushDesc)
+				.addText((text) =>
+					text
+						.setPlaceholder(i18n.remoteUrlPlaceholder)
+						.onChange((value) => {
+							remoteInput = value.trim();
+						})
+				)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.wizardSetUpstreamButton).onClick(async () => {
+						if (!remoteInput) return;
+						try {
+							await setRemoteUrl(cwd, gitPath, remoteInput);
+							await setUpstream(cwd, gitPath);
+							new Notice(i18n.noticeUpstreamSet);
+							this.display();
+						} catch (e) {
+							new Notice(i18n.noticeUpstreamFailed((e as Error).message));
+						}
+					})
+				);
+		} else if (state === "remote-no-upstream") {
+			// Has remote but no upstream - offer to set upstream
+			new Setting(container)
+				.setName(i18n.wizardSetUpstream)
+				.setDesc(i18n.wizardSetUpstreamDesc)
+				.addButton((btn) =>
+					btn.setButtonText(i18n.wizardSetUpstreamButton).onClick(async () => {
+						try {
+							await setUpstream(cwd, gitPath);
+							new Notice(i18n.noticeUpstreamSet);
+							this.display();
+						} catch (e) {
+							new Notice(i18n.noticeUpstreamFailed((e as Error).message));
+						}
+					})
+				);
+		}
 	}
 
 	private async displayRepoSection(container: HTMLElement): Promise<void> {

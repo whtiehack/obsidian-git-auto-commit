@@ -43,6 +43,34 @@ type Translations = {
 	noticeReverted: string;
 	noticeRevertFailed: (msg: string) => string;
 
+	// Setup wizard
+	sectionSetup: string;
+	setupNotRepo: string;
+	setupEmptyRepo: string;
+	setupLocalOnly: string;
+	setupNoUpstream: string;
+	setupReady: string;
+
+	wizardConnectRemote: string;
+	wizardConnectRemoteDesc: string;
+	wizardConnectButton: string;
+	wizardInitAndPush: string;
+	wizardInitAndPushDesc: string;
+	wizardInitAndPushButton: string;
+	wizardLocalOnly: string;
+	wizardLocalOnlyDesc: string;
+	wizardLocalOnlyButton: string;
+	wizardSetUpstream: string;
+	wizardSetUpstreamDesc: string;
+	wizardSetUpstreamButton: string;
+
+	noticeConnected: string;
+	noticeConnectFailed: (msg: string) => string;
+	noticeInitPushSuccess: string;
+	noticeInitPushFailed: (msg: string) => string;
+	noticeUpstreamSet: string;
+	noticeUpstreamFailed: (msg: string) => string;
+
 	// Repository
 	repoStatusName: string;
 	repoNotInitialized: string;
@@ -128,6 +156,33 @@ const en: Translations = {
 	noticeReverted: "GitAutoCommit: All changes reverted.",
 	noticeRevertFailed: (msg) => `GitAutoCommit: Revert failed - ${msg}`,
 
+	sectionSetup: "Setup",
+	setupNotRepo: "Not a Git repository",
+	setupEmptyRepo: "Empty repository (no commits)",
+	setupLocalOnly: "Local only (no remote)",
+	setupNoUpstream: "Remote configured (no upstream)",
+	setupReady: "Ready",
+
+	wizardConnectRemote: "Connect to remote repository",
+	wizardConnectRemoteDesc: "Sync with an existing remote repository.",
+	wizardConnectButton: "Connect",
+	wizardInitAndPush: "Create new repository",
+	wizardInitAndPushDesc: "Initialize and push to an empty remote.",
+	wizardInitAndPushButton: "Create & Push",
+	wizardLocalOnly: "Local version control only",
+	wizardLocalOnlyDesc: "Just track changes locally without remote sync.",
+	wizardLocalOnlyButton: "Initialize",
+	wizardSetUpstream: "Set upstream branch",
+	wizardSetUpstreamDesc: "Push current branch and set upstream tracking.",
+	wizardSetUpstreamButton: "Set Upstream",
+
+	noticeConnected: "GitAutoCommit: Connected to remote repository.",
+	noticeConnectFailed: (msg) => `GitAutoCommit: Connect failed - ${msg}`,
+	noticeInitPushSuccess: "GitAutoCommit: Repository created and pushed.",
+	noticeInitPushFailed: (msg) => `GitAutoCommit: Init/push failed - ${msg}`,
+	noticeUpstreamSet: "GitAutoCommit: Upstream branch set.",
+	noticeUpstreamFailed: (msg) => `GitAutoCommit: Set upstream failed - ${msg}`,
+
 	repoStatusName: "Repository status",
 	repoNotInitialized: "Not a git repository",
 	repoInitialized: "Git repository initialized",
@@ -209,6 +264,33 @@ const zhCN: Translations = {
 	ribbonMenuRevertAll: "还原所有修改",
 	noticeReverted: "GitAutoCommit: 已还原所有修改。",
 	noticeRevertFailed: (msg) => `GitAutoCommit: 还原失败 - ${msg}`,
+
+	sectionSetup: "初始设置",
+	setupNotRepo: "尚未初始化为 Git 仓库",
+	setupEmptyRepo: "空仓库（无提交）",
+	setupLocalOnly: "仅本地（无远程）",
+	setupNoUpstream: "已配置远程（无上游分支）",
+	setupReady: "就绪",
+
+	wizardConnectRemote: "连接远程仓库",
+	wizardConnectRemoteDesc: "同步到已有的远程仓库。",
+	wizardConnectButton: "连接",
+	wizardInitAndPush: "创建新仓库",
+	wizardInitAndPushDesc: "初始化并推送到空的远程仓库。",
+	wizardInitAndPushButton: "创建并推送",
+	wizardLocalOnly: "仅本地版本控制",
+	wizardLocalOnlyDesc: "仅在本地跟踪变更，不同步远程。",
+	wizardLocalOnlyButton: "初始化",
+	wizardSetUpstream: "设置上游分支",
+	wizardSetUpstreamDesc: "推送当前分支并设置上游跟踪。",
+	wizardSetUpstreamButton: "设置上游",
+
+	noticeConnected: "GitAutoCommit: 已连接到远程仓库。",
+	noticeConnectFailed: (msg) => `GitAutoCommit: 连接失败 - ${msg}`,
+	noticeInitPushSuccess: "GitAutoCommit: 仓库已创建并推送。",
+	noticeInitPushFailed: (msg) => `GitAutoCommit: 初始化/推送失败 - ${msg}`,
+	noticeUpstreamSet: "GitAutoCommit: 已设置上游分支。",
+	noticeUpstreamFailed: (msg) => `GitAutoCommit: 设置上游失败 - ${msg}`,
 
 	repoStatusName: "仓库状态",
 	repoNotInitialized: "尚未初始化为 Git 仓库",
