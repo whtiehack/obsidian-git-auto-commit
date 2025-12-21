@@ -1,6 +1,6 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, FileStatus, getChangedFilesSync, commitAndPushSync } from "./git";
+import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, revertFile, FileStatus, getChangedFilesSync, commitAndPushSync } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 import { RevertConfirmModal } from "./modals";
@@ -56,6 +56,7 @@ export default class AutoGitPlugin extends Plugin {
 
 		this.setupVaultListeners();
 		this.setupStatusBadges();
+		this.setupFileContextMenu();
 
 		// Auto pull on open
 		if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
@@ -333,6 +334,37 @@ export default class AutoGitPlugin extends Plugin {
 		} catch (e) {
 			new Notice(t().noticeRevertFailed((e as Error).message));
 		}
+	}
+
+	private setupFileContextMenu() {
+		if (Platform.isMobileApp) return;
+
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile)) return;
+
+				const filePath = file.path;
+				const status = this.currentStatuses.get(filePath);
+				if (!status) return;
+
+				menu.addItem((item) => {
+					item.setTitle(t().revertFileMenu)
+						.setIcon("rotate-ccw")
+						.onClick(() => {
+							new RevertConfirmModal(this.app, [filePath], async () => {
+								try {
+									const cwd = this.getVaultPath();
+									await revertFile(cwd, this.settings.gitPath, filePath);
+									new Notice(t().noticeFileReverted);
+									this.refreshStatusBadges();
+								} catch (e) {
+									new Notice(t().noticeFileRevertFailed((e as Error).message));
+								}
+							}).open();
+						});
+				});
+			})
+		);
 	}
 
 	private async doPull() {

@@ -231,6 +231,16 @@ export async function revertAll(cwd: string, gitPath: string): Promise<void> {
 	await runGit({ cwd, gitPath, args: ["clean", "-fd"] });
 }
 
+export async function revertFile(cwd: string, gitPath: string, filePath: string): Promise<void> {
+	try {
+		// Try checkout first (for modified files)
+		await runGit({ cwd, gitPath, args: ["checkout", "--", filePath] });
+	} catch {
+		// If checkout fails, it might be an untracked file - remove it
+		await runGit({ cwd, gitPath, args: ["clean", "-f", "--", filePath] });
+	}
+}
+
 export type FileStatus = "M" | "A" | "R" | "U" | "?" | "";
 
 export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
