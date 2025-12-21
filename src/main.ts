@@ -60,16 +60,14 @@ export default class AutoGitPlugin extends Plugin {
 		this.setupVaultListeners();
 		this.setupFileContextMenu();
 
-		// Wait for layout ready before initializing badges
+		// Wait for layout ready before initializing
 		this.app.workspace.onLayoutReady(() => {
 			this.updateStatusBadges();
-		});
 
-		// Auto pull on open
-		if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
-			// Delay to ensure vault is ready
-			window.setTimeout(() => { void this.doPull(); }, 1000);
-		}
+			if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
+				void this.doPull();
+			}
+		});
 
 		// Setup beforeunload handler for commit on close
 		if (!Platform.isMobileApp) {
