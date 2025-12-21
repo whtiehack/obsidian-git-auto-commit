@@ -1,7 +1,7 @@
 import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
-import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, pull, detectRepoState, RepoState, connectToRemote, initAndPush, setUpstream } from "./git";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, detectRepoState, RepoState, connectToRemote, initAndPush, setUpstream } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -160,7 +160,7 @@ export class AutoGitSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.showStatusBadge).onChange(async (value) => {
 					this.plugin.settings.showStatusBadge = value;
 					await this.plugin.saveSettings();
-					this.plugin.refreshStatusBadges();
+					this.plugin.updateStatusBadges();
 				})
 			);
 
@@ -232,9 +232,10 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.setName(i18n.repoStatusName)
 			.setDesc(stateLabels[state]);
 
-		let remoteInput = "";
-
 		if (state === "not-a-repo" || state === "empty-repo") {
+			let connectRemoteInput = "";
+			let initPushRemoteInput = "";
+
 			// Option 1: Connect to existing remote
 			new Setting(container)
 				.setName(i18n.wizardConnectRemote)
@@ -243,15 +244,15 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					text
 						.setPlaceholder(i18n.remoteUrlPlaceholder)
 						.onChange((value) => {
-							remoteInput = value.trim();
+							connectRemoteInput = value.trim();
 						})
 				)
 				.addButton((btn) =>
 					btn.setButtonText(i18n.wizardConnectButton).onClick(async () => {
-						if (!remoteInput) return;
+						if (!connectRemoteInput) return;
 						try {
 							const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
-							await connectToRemote(cwd, gitPath, remoteInput, ignoreDir);
+							await connectToRemote(cwd, gitPath, connectRemoteInput, ignoreDir);
 							new Notice(i18n.noticeConnected);
 							this.display();
 							this.plugin.refreshStatusBadges();
@@ -269,15 +270,15 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					text
 						.setPlaceholder(i18n.remoteUrlPlaceholder)
 						.onChange((value) => {
-							remoteInput = value.trim();
+							initPushRemoteInput = value.trim();
 						})
 				)
 				.addButton((btn) =>
 					btn.setButtonText(i18n.wizardInitAndPushButton).onClick(async () => {
-						if (!remoteInput) return;
+						if (!initPushRemoteInput) return;
 						try {
 							const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
-							await initAndPush(cwd, gitPath, remoteInput, "main", ignoreDir);
+							await initAndPush(cwd, gitPath, initPushRemoteInput, "main", ignoreDir);
 							new Notice(i18n.noticeInitPushSuccess);
 							this.display();
 							this.plugin.refreshStatusBadges();
@@ -303,6 +304,8 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					})
 				);
 		} else if (state === "local-only") {
+			let remoteInput = "";
+
 			// Has commits but no remote - offer to add remote
 			new Setting(container)
 				.setName(i18n.wizardInitAndPush)
@@ -389,19 +392,8 @@ export class AutoGitSettingTab extends PluginSettingTab {
 				.setDesc(i18n.pullNowDesc)
 				.addButton((btn) =>
 					btn.setButtonText(i18n.pullNowButton).onClick(async () => {
-						try {
-							const result = await pull(cwd, gitPath);
-							if (result.hasConflicts) {
-								this.plugin.setHasConflicts(true);
-								new Notice(i18n.noticeConflictDetected);
-								this.display();
-							} else {
-								new Notice(i18n.noticePulled);
-								this.plugin.refreshStatusBadges();
-							}
-						} catch (e) {
-							new Notice(i18n.noticePullFailed((e as Error).message));
-						}
+						await this.plugin.doPull();
+						this.display();
 					})
 				);
 

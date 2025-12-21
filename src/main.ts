@@ -13,6 +13,7 @@ export default class AutoGitPlugin extends Plugin {
 	private pendingRerun = false;
 	private vaultEventRefs: EventRef[] = [];
 	private statusRefreshInterval: number | null = null;
+	private statusRefreshTimeout: number | null = null;
 	private currentStatuses: Map<string, FileStatus> = new Map();
 	private conflictFiles: Set<string> = new Set();
 	private _hasConflicts = false;
@@ -28,7 +29,7 @@ export default class AutoGitPlugin extends Plugin {
 		this.addCommand({
 			id: "commit-now",
 			name: "Commit now",
-			callback: () => this.runCommit("manual"),
+			callback: () => { void this.runCommit("manual"); },
 		});
 
 		this.addCommand({
@@ -45,17 +46,17 @@ export default class AutoGitPlugin extends Plugin {
 		this.addCommand({
 			id: "pull-now",
 			name: "Pull now",
-			callback: () => this.doPull(),
+			callback: () => { void this.doPull(); },
 		});
 
 		this.addCommand({
 			id: "push-now",
 			name: "Push now",
-			callback: () => this.doPush(),
+			callback: () => { void this.doPush(); },
 		});
 
 		this.setupVaultListeners();
-		this.setupStatusBadges();
+		this.updateStatusBadges();
 		this.setupFileContextMenu();
 
 		// Auto pull on open
@@ -101,6 +102,11 @@ export default class AutoGitPlugin extends Plugin {
 		this.clearStatusBadges();
 		if (this.statusRefreshInterval) {
 			window.clearInterval(this.statusRefreshInterval);
+			this.statusRefreshInterval = null;
+		}
+		if (this.statusRefreshTimeout) {
+			window.clearTimeout(this.statusRefreshTimeout);
+			this.statusRefreshTimeout = null;
 		}
 		if (this.ribbonIconEl) {
 			this.ribbonIconEl.remove();
@@ -371,7 +377,7 @@ export default class AutoGitPlugin extends Plugin {
 		);
 	}
 
-	private async doPull() {
+	async doPull() {
 		if (Platform.isMobileApp) {
 			new Notice(t().noticeMobileNotSupported);
 			return;
@@ -408,6 +414,7 @@ export default class AutoGitPlugin extends Plugin {
 
 		if (value && !this.resolveConflictCommand) {
 			// Add resolve conflict command when conflicts exist
+			// Note: Obsidian doesn't support removing commands, so we keep the reference
 			this.resolveConflictCommand = this.addCommand({
 				id: "resolve-conflicts",
 				name: "Mark conflicts as resolved",
@@ -425,10 +432,6 @@ export default class AutoGitPlugin extends Plugin {
 					}
 				},
 			});
-		} else if (!value && this.resolveConflictCommand) {
-			// Remove command when no conflicts - Note: Obsidian doesn't support removing commands
-			// So we just clear the reference
-			this.resolveConflictCommand = null;
 		}
 
 		if (!value) {
@@ -437,8 +440,21 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	// Status badge functionality
-	private setupStatusBadges() {
-		if (Platform.isMobileApp || !this.settings.showStatusBadge) return;
+	updateStatusBadges() {
+		// Clear existing timers
+		if (this.statusRefreshInterval) {
+			window.clearInterval(this.statusRefreshInterval);
+			this.statusRefreshInterval = null;
+		}
+		if (this.statusRefreshTimeout) {
+			window.clearTimeout(this.statusRefreshTimeout);
+			this.statusRefreshTimeout = null;
+		}
+
+		if (Platform.isMobileApp || !this.settings.showStatusBadge) {
+			this.clearStatusBadges();
+			return;
+		}
 
 		// Initial refresh
 		this.refreshStatusBadges();
@@ -452,7 +468,13 @@ export default class AutoGitPlugin extends Plugin {
 	private scheduleStatusRefresh() {
 		if (!this.settings.showStatusBadge) return;
 		// Debounced refresh after file change
-		window.setTimeout(() => this.refreshStatusBadges(), 500);
+		if (this.statusRefreshTimeout) {
+			window.clearTimeout(this.statusRefreshTimeout);
+		}
+		this.statusRefreshTimeout = window.setTimeout(() => {
+			this.statusRefreshTimeout = null;
+			this.refreshStatusBadges();
+		}, 500);
 	}
 
 	refreshStatusBadges() {
@@ -513,11 +535,10 @@ export default class AutoGitPlugin extends Plugin {
 		});
 	}
 
-	private calculateFolderStatuses(statuses?: Map<string, FileStatus>): Map<string, FileStatus> {
-		const sourceStatuses = statuses || this.currentStatuses;
+	private calculateFolderStatuses(statuses: Map<string, FileStatus>): Map<string, FileStatus> {
 		const folderStatuses = new Map<string, FileStatus>();
 
-		sourceStatuses.forEach((status, filePath) => {
+		statuses.forEach((status, filePath) => {
 			// Get all parent folders
 			const parts = filePath.split(/[/\\]/);
 			for (let i = 1; i < parts.length; i++) {

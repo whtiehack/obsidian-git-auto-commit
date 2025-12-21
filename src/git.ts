@@ -107,13 +107,13 @@ export async function getChangedFiles(cwd: string, gitPath: string): Promise<str
 		const statusCode = entry.slice(0, 2);
 		const filePath = entry.slice(3);
 
-		if (filePath) files.push(filePath);
-
-		// Handle rename/copy entries (have additional NUL-separated path)
+		// Handle rename/copy entries (have additional NUL-separated path for new name)
 		if (statusCode.startsWith("R") || statusCode.startsWith("C")) {
 			const newPath = parts[++i];
 			if (newPath) files.push(newPath);
+			continue;
 		}
+		if (filePath) files.push(filePath);
 	}
 
 	return [...new Set(files)];
@@ -241,7 +241,7 @@ export async function revertFile(cwd: string, gitPath: string, filePath: string)
 	}
 }
 
-export type FileStatus = "M" | "A" | "R" | "U" | "?" | "";
+export type FileStatus = "M" | "A" | "R" | "U" | "";
 
 export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
 	const statusMap = new Map<string, FileStatus>();
@@ -255,29 +255,31 @@ export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map
 		for (let i = 0; i < parts.length; i++) {
 			const entry = parts[i];
 			const xy = entry.slice(0, 2);
-			const filePath = entry.slice(3);
+			let filePath = entry.slice(3);
+
+			// Rename/copy entries include an extra NUL-separated "new path"
+			if (xy.startsWith("R") || xy.startsWith("C")) {
+				const newPath = parts[++i];
+				if (newPath) filePath = newPath;
+			}
 
 			// Determine status: X is staged, Y is unstaged
-			// We show the most relevant status
 			let status: FileStatus = "";
 
-			if (xy === "??" || xy.includes("?")) {
+			if (xy.includes("U")) {
+				status = "U"; // Unmerged / conflict (highest priority)
+			} else if (xy === "??") {
 				status = "A"; // Untracked = new file
 			} else if (xy.includes("A")) {
 				status = "A"; // Added
-			} else if (xy.includes("R")) {
-				status = "R"; // Renamed
-			} else if (xy.includes("M") || xy.includes("U")) {
+			} else if (xy.includes("M")) {
 				status = "M"; // Modified
+			} else if (xy.includes("R") || xy.includes("C")) {
+				status = "R"; // Renamed / copied
 			}
 
 			if (filePath && status) {
 				statusMap.set(filePath, status);
-			}
-
-			// Handle rename (has extra path)
-			if (xy.startsWith("R") || xy.startsWith("C")) {
-				i++;
 			}
 		}
 	} catch {
@@ -421,8 +423,12 @@ export function getChangedFilesSync(cwd: string, gitPath: string): string[] {
 			const entry = parts[i];
 			const statusCode = entry.slice(0, 2);
 			const filePath = entry.slice(3);
+			if (statusCode.startsWith("R") || statusCode.startsWith("C")) {
+				const newPath = parts[++i];
+				if (newPath) files.push(newPath);
+				continue;
+			}
 			if (filePath) files.push(filePath);
-			if (statusCode.startsWith("R") || statusCode.startsWith("C")) i++;
 		}
 		return [...new Set(files)];
 	} catch {
