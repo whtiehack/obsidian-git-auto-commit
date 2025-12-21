@@ -57,6 +57,7 @@ Then copy `main.js`, `manifest.json`, and `styles.css` to your vault's plugin fo
 | Option | Description | Default |
 |--------|-------------|---------|
 | Auto pull on open | Pull from remote when Obsidian opens | Off |
+| Commit and push on close | Commit and push when Obsidian closes (may cause brief delay) | Off |
 | Enable auto commit | Auto commit after file changes | Off |
 | Debounce delay (seconds) | Wait time before committing | 30 |
 | Auto push after commit | Push to remote after commit | Off |
