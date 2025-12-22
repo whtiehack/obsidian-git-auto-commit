@@ -72,9 +72,11 @@ Then copy `main.js`, `manifest.json`, and `styles.css` to your vault's plugin fo
 | Commit message template | Custom message format | `vault backup: {{date}} {{time}}` |
 | Include file list in commit body | List changed files in body | On |
 | Show git status in file explorer | Display colored dots next to changed files | On |
+| Badge refresh interval (seconds) | Detect external git changes. Set to 0 if you only use Obsidian | 0 |
 | Show ribbon button | Add Git actions menu to left ribbon | On |
 | Git binary path | Path to git executable | `git` |
-| Ignore .obsidian directory | Exclude config folder from triggers | On |
+| Ignore config directory | Exclude Obsidian config folder from triggers | On |
+| Debug logging | Log git commands to console (Ctrl+Shift+I to view) | Off |
 
 ### Setup (for new users)
 
