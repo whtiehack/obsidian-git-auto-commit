@@ -16,12 +16,12 @@ export function setGitDebug(enabled: boolean): void {
 
 function log(message: string, ...args: unknown[]): void {
 	if (!debugEnabled) return;
-	console.info(`[auto-git] ${message}`, ...args);
+	console.debug(`[auto-git] ${message}`, ...args);
 }
 
 function logCmd(args: string[]): void {
 	if (!debugEnabled) return;
-	console.info(`[auto-git] > git ${args.join(" ")}`);
+	console.debug(`[auto-git] > git ${args.join(" ")}`);
 }
 
 function runGitSync({ cwd, gitPath, args }: GitRunOptions): string {

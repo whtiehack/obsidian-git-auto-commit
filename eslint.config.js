@@ -21,7 +21,6 @@ export default defineConfig([
 		},
 		rules: {
 			"obsidianmd/sample-names": "off",
-			"no-console": ["error", { allow: ["warn", "error", "debug", "info"] }],
 		},
 	},
 ]);
