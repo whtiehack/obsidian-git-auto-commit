@@ -16,10 +16,12 @@ export default defineConfig([
 				document: "readonly",
 				process: "readonly",
 				NodeJS: "readonly",
+				console: "readonly",
 			},
 		},
 		rules: {
 			"obsidianmd/sample-names": "off",
+			"no-console": ["error", { allow: ["warn", "error", "debug", "info"] }],
 		},
 	},
 ]);
