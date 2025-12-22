@@ -1,9 +1,10 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getFileStatuses, getConflictFiles, markConflictsResolved, revertAll, revertFile, FileStatus, getChangedFilesSync, commitSyncAndPushDetached } from "./git";
+import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 import { RevertConfirmModal } from "./modals";
+import { GitStatusBadgeManager } from "./statusBadges";
 
 export default class AutoGitPlugin extends Plugin {
 	settings: AutoGitSettings = DEFAULT_SETTINGS;
@@ -12,16 +13,12 @@ export default class AutoGitPlugin extends Plugin {
 	private isCommitting = false;
 	private pendingRerun = false;
 	private vaultEventRefs: EventRef[] = [];
-	private statusRefreshInterval: number | null = null;
-	private statusRefreshTimeout: number | null = null;
-	private currentStatuses: Map<string, FileStatus> = new Map();
-	private previousStatuses: Map<string, FileStatus> = new Map();
 	private conflictFiles: Set<string> = new Set();
 	private _hasConflicts = false;
 	private resolveConflictCommand: { id: string } | null = null;
 	private ribbonIconEl: HTMLElement | null = null;
 	private beforeUnloadHandler: (() => void) | null = null;
-	private mutationObserver: MutationObserver | null = null;
+	private statusBadges: GitStatusBadgeManager | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -60,16 +57,14 @@ export default class AutoGitPlugin extends Plugin {
 		this.setupVaultListeners();
 		this.setupFileContextMenu();
 
-		// Wait for layout ready before initializing
 		this.app.workspace.onLayoutReady(() => {
-			this.updateStatusBadges();
+			this.initStatusBadges();
 
 			if (this.settings.autoPullOnOpen && !Platform.isMobileApp) {
 				void this.doPull();
 			}
 		});
 
-		// Setup beforeunload handler for commit on close
 		if (!Platform.isMobileApp) {
 			this.beforeUnloadHandler = () => {
 				if (this.settings.commitOnClose) {
@@ -88,7 +83,6 @@ export default class AutoGitPlugin extends Plugin {
 							if (this.settings.includeFileList) {
 								message += "\n\n" + changedFiles.join("\n");
 							}
-							// Sync commit + detached push (push runs in background after app closes)
 							commitSyncAndPushDetached(cwd, this.settings.gitPath, message);
 						}
 					}
@@ -97,26 +91,14 @@ export default class AutoGitPlugin extends Plugin {
 			window.addEventListener("beforeunload", this.beforeUnloadHandler);
 		}
 
-		// Check for existing conflicts on load
 		void this.checkConflicts();
 	}
 
 	onunload() {
 		this.clearDebounce();
 		this.removeVaultListeners();
-		this.clearStatusBadges();
-		if (this.statusRefreshInterval) {
-			window.clearInterval(this.statusRefreshInterval);
-			this.statusRefreshInterval = null;
-		}
-		if (this.statusRefreshTimeout) {
-			window.clearTimeout(this.statusRefreshTimeout);
-			this.statusRefreshTimeout = null;
-		}
-		if (this.mutationObserver) {
-			this.mutationObserver.disconnect();
-			this.mutationObserver = null;
-		}
+		this.statusBadges?.stop();
+		this.statusBadges = null;
 		if (this.ribbonIconEl) {
 			this.ribbonIconEl.remove();
 			this.ribbonIconEl = null;
@@ -152,25 +134,32 @@ export default class AutoGitPlugin extends Plugin {
 			return;
 		}
 
-		const handler = (file: TAbstractFile) => this.onFileChange(file);
-
-		this.vaultEventRefs.push(this.app.vault.on("create", handler));
-		this.vaultEventRefs.push(this.app.vault.on("modify", handler));
-		this.vaultEventRefs.push(this.app.vault.on("delete", handler));
-		this.vaultEventRefs.push(this.app.vault.on("rename", handler as (file: TAbstractFile, oldPath: string) => void));
+		this.vaultEventRefs.push(this.app.vault.on("create", (file) => this.onFileChange(file, "create")));
+		this.vaultEventRefs.push(this.app.vault.on("modify", (file) => this.onFileChange(file, "modify")));
+		this.vaultEventRefs.push(this.app.vault.on("delete", (file) => this.onFileChange(file, "delete")));
+		this.vaultEventRefs.push(this.app.vault.on("rename", (file, oldPath) => this.onFileRename(file, oldPath)));
 	}
 
-	private onFileChange(file: TAbstractFile) {
+	private onFileChange(file: TAbstractFile, type: "create" | "modify" | "delete") {
 		if (!(file instanceof TFile)) return;
 		if (this.shouldIgnore(file.path)) return;
 
-		// Always refresh badges on file change
-		this.scheduleStatusRefresh();
-
-		// Only schedule commit if autoCommit is enabled
-		if (this.settings.autoCommit) {
-			this.scheduleCommit();
+		if (this.statusBadges) {
+			if (type === "create") this.statusBadges.noteCreate(file.path);
+			else if (type === "modify") this.statusBadges.noteModify(file.path);
+			else if (type === "delete") this.statusBadges.noteDelete(file.path);
 		}
+
+		if (this.settings.autoCommit) this.scheduleCommit();
+	}
+
+	private onFileRename(file: TAbstractFile, oldPath: string) {
+		if (!(file instanceof TFile)) return;
+		if (this.shouldIgnore(oldPath) && this.shouldIgnore(file.path)) return;
+
+		this.statusBadges?.noteRename(oldPath, file.path);
+
+		if (this.settings.autoCommit) this.scheduleCommit();
 	}
 
 	private shouldIgnore(path: string): boolean {
@@ -214,7 +203,6 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	async runCommit(reason: "manual" | "auto"): Promise<boolean> {
-		// Don't commit if there are conflicts
 		if (this._hasConflicts) {
 			if (reason === "manual") {
 				new Notice(t().noticeCannotCommitConflict);
@@ -264,8 +252,7 @@ export default class AutoGitPlugin extends Plugin {
 				await this.doPush();
 			}
 
-			// Refresh badges after commit
-			this.refreshStatusBadges();
+			void this.statusBadges?.refresh();
 		} catch (e) {
 			new Notice(t().noticeAutoGitError((e as Error).message));
 		} finally {
@@ -345,7 +332,7 @@ export default class AutoGitPlugin extends Plugin {
 					try {
 						await revertAll(cwd, this.settings.gitPath);
 						new Notice(t().noticeReverted);
-						this.refreshStatusBadges();
+						void this.statusBadges?.refresh();
 					} catch (e) {
 						new Notice(t().noticeRevertFailed((e as Error).message));
 					}
@@ -364,7 +351,7 @@ export default class AutoGitPlugin extends Plugin {
 				if (!(file instanceof TFile)) return;
 
 				const filePath = file.path;
-				const status = this.currentStatuses.get(filePath);
+				const status = this.statusBadges?.getStatus(filePath);
 				if (!status) return;
 
 				menu.addItem((item) => {
@@ -377,7 +364,7 @@ export default class AutoGitPlugin extends Plugin {
 										const cwd = this.getVaultPath();
 										await revertFile(cwd, this.settings.gitPath, filePath);
 										new Notice(t().noticeFileReverted);
-										this.refreshStatusBadges();
+										void this.statusBadges?.refresh();
 									} catch (e) {
 										new Notice(t().noticeFileRevertFailed((e as Error).message));
 									}
@@ -404,7 +391,7 @@ export default class AutoGitPlugin extends Plugin {
 				new Notice(t().noticeConflictDetected);
 			} else if (result.success) {
 				new Notice(t().noticePulled);
-				this.refreshStatusBadges();
+				void this.statusBadges?.refresh();
 			}
 		} catch (e) {
 			new Notice(t().noticePullFailed((e as Error).message));
@@ -418,15 +405,13 @@ export default class AutoGitPlugin extends Plugin {
 		const conflicts = await getConflictFiles(cwd, this.settings.gitPath);
 		this.conflictFiles = new Set(conflicts);
 		this.setHasConflicts(conflicts.length > 0);
-		this.refreshStatusBadges();
+		this.statusBadges?.setConflicts(this.conflictFiles);
 	}
 
 	setHasConflicts(value: boolean) {
 		this._hasConflicts = value;
 
 		if (value && !this.resolveConflictCommand) {
-			// Add resolve conflict command when conflicts exist
-			// Note: Obsidian doesn't support removing commands, so we keep the reference
 			this.resolveConflictCommand = this.addCommand({
 				id: "resolve-conflicts",
 				name: "Mark conflicts as resolved",
@@ -437,8 +422,9 @@ export default class AutoGitPlugin extends Plugin {
 						await markConflictsResolved(cwd, this.settings.gitPath);
 						this.conflictFiles.clear();
 						this.setHasConflicts(false);
+						this.statusBadges?.setConflicts(this.conflictFiles);
 						new Notice(t().noticeConflictResolved);
-						this.refreshStatusBadges();
+						void this.statusBadges?.refresh();
 					} catch (e) {
 						new Notice((e as Error).message);
 					}
@@ -448,272 +434,39 @@ export default class AutoGitPlugin extends Plugin {
 
 		if (!value) {
 			this.conflictFiles.clear();
+			this.statusBadges?.setConflicts(this.conflictFiles);
 		}
 	}
 
-	// Status badge functionality
-	updateStatusBadges() {
-		// Clear existing timers
-		if (this.statusRefreshInterval) {
-			window.clearInterval(this.statusRefreshInterval);
-			this.statusRefreshInterval = null;
-		}
-		if (this.statusRefreshTimeout) {
-			window.clearTimeout(this.statusRefreshTimeout);
-			this.statusRefreshTimeout = null;
-		}
-		// Disconnect existing observer
-		if (this.mutationObserver) {
-			this.mutationObserver.disconnect();
-			this.mutationObserver = null;
-		}
+	private initStatusBadges() {
+		if (Platform.isMobileApp) return;
 
-		if (Platform.isMobileApp || !this.settings.showStatusBadge) {
-			this.clearStatusBadges();
+		this.statusBadges = new GitStatusBadgeManager({
+			getCwd: () => this.getVaultPathSafe(),
+			getGitPath: () => this.settings.gitPath,
+			shouldIgnore: (path) => this.shouldIgnore(path),
+		});
+
+		this.statusBadges.setConflicts(this.conflictFiles);
+		this.statusBadges.start(this.settings.showStatusBadge, this.settings.badgeRefreshInterval);
+	}
+
+	updateStatusBadges() {
+		if (Platform.isMobileApp) {
+			this.statusBadges?.stop();
 			return;
 		}
 
-		// Initial refresh
-		this.refreshStatusBadges();
-
-		// Setup polling if interval > 0
-		const interval = this.settings.badgeRefreshInterval;
-		if (interval > 0) {
-			this.statusRefreshInterval = window.setInterval(() => {
-				this.refreshStatusBadges();
-			}, interval * 1000);
+		if (!this.statusBadges) {
+			this.initStatusBadges();
+			return;
 		}
 
-		// Setup MutationObserver for virtualized file list
-		this.setupMutationObserver();
-	}
-
-	private setupMutationObserver() {
-		// Find file explorer container
-		const container = document.querySelector(".nav-files-container");
-		if (!container) return;
-
-		this.mutationObserver = new MutationObserver((mutations) => {
-			for (const mutation of mutations) {
-				mutation.addedNodes.forEach((node) => {
-					if (node instanceof HTMLElement) {
-						this.applyBadgesToNewNodes(node);
-					}
-				});
-			}
-		});
-
-		this.mutationObserver.observe(container, {
-			childList: true,
-			subtree: true,
-		});
-	}
-
-	private applyBadgesToNewNodes(node: HTMLElement) {
-		// Check if node itself is a file/folder title
-		const items = node.matches(".nav-file-title, .nav-folder-title")
-			? [node]
-			: Array.from(node.querySelectorAll(".nav-file-title, .nav-folder-title"));
-
-		const allStatuses = this.getMergedStatuses();
-
-		for (const item of items) {
-			const path = item.getAttribute("data-path");
-			if (!path) continue;
-
-			// Skip if already has badge
-			if (item.querySelector(".git-status-badge")) continue;
-
-			const status = allStatuses.get(path);
-			if (status) {
-				this.addBadgeToElement(item, status);
-			}
-		}
-	}
-
-	private scheduleStatusRefresh() {
-		if (!this.settings.showStatusBadge) return;
-		// Debounced refresh after file change
-		if (this.statusRefreshTimeout) {
-			window.clearTimeout(this.statusRefreshTimeout);
-		}
-		this.statusRefreshTimeout = window.setTimeout(() => {
-			this.statusRefreshTimeout = null;
-			this.refreshStatusBadges();
-		}, 500);
+		this.statusBadges.setConflicts(this.conflictFiles);
+		this.statusBadges.start(this.settings.showStatusBadge, this.settings.badgeRefreshInterval);
 	}
 
 	refreshStatusBadges() {
-		if (!this.settings.showStatusBadge) {
-			this.clearStatusBadges();
-			return;
-		}
-
-		const cwd = this.getVaultPathSafe();
-		if (!cwd) return;
-
-		getFileStatuses(cwd, this.settings.gitPath).then((statuses) => {
-			this.currentStatuses = statuses;
-			// Use full update if first time, otherwise use diff
-			if (this.previousStatuses.size === 0) {
-				this.updateBadgesInDOM();
-			} else {
-				this.updateBadgesDiff();
-			}
-		}).catch(() => {
-			// Ignore errors
-		});
-	}
-
-	private clearStatusBadges() {
-		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
-		this.currentStatuses.clear();
-		this.previousStatuses.clear();
-	}
-
-	private getMergedStatuses(): Map<string, FileStatus> {
-		const merged = new Map(this.currentStatuses);
-		this.conflictFiles.forEach((file) => {
-			merged.set(file, "U" as FileStatus);
-		});
-
-		// Add folder statuses
-		const folderStatuses = this.calculateFolderStatuses(merged);
-		folderStatuses.forEach((status, path) => {
-			merged.set(path, status);
-		});
-
-		return merged;
-	}
-
-	private updateBadgesDiff() {
-		const newStatuses = this.getMergedStatuses();
-
-		// Find paths to remove (in previous but not in new, or status changed)
-		for (const [path, oldStatus] of this.previousStatuses) {
-			const newStatus = newStatuses.get(path);
-			if (!newStatus || newStatus !== oldStatus) {
-				this.removeBadgeFromPath(path);
-			}
-		}
-
-		// Find paths to add/update (in new but not in previous, or status changed)
-		for (const [path, status] of newStatuses) {
-			const oldStatus = this.previousStatuses.get(path);
-			if (oldStatus !== status) {
-				this.updateBadgeForPath(path, status);
-			}
-		}
-
-		this.previousStatuses = newStatuses;
-	}
-
-	private removeBadgeFromPath(path: string) {
-		const escapedPath = CSS.escape(path);
-		const selector = `.nav-file-title[data-path="${escapedPath}"], .nav-folder-title[data-path="${escapedPath}"]`;
-		const el = document.querySelector(selector);
-		if (el) {
-			const badge = el.querySelector(".git-status-badge");
-			if (badge) badge.remove();
-		}
-	}
-
-	private updateBadgeForPath(path: string, status: FileStatus) {
-		const escapedPath = CSS.escape(path);
-		const selector = `.nav-file-title[data-path="${escapedPath}"], .nav-folder-title[data-path="${escapedPath}"]`;
-		const el = document.querySelector(selector);
-		if (el) {
-			// Remove existing badge if any
-			const existingBadge = el.querySelector(".git-status-badge");
-			if (existingBadge) existingBadge.remove();
-			// Add new badge
-			this.addBadgeToElement(el, status);
-		}
-	}
-
-	private updateBadgesInDOM() {
-		// Remove old badges
-		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
-
-		// Merge conflict files into statuses with highest priority
-		const mergedStatuses = new Map(this.currentStatuses);
-		this.conflictFiles.forEach((file) => {
-			mergedStatuses.set(file, "U" as FileStatus); // U for unmerged/conflict
-		});
-
-		// Calculate folder statuses from merged statuses
-		const folderStatuses = this.calculateFolderStatuses(mergedStatuses);
-
-		// Add badges to files
-		document.querySelectorAll(".nav-file-title").forEach((item) => {
-			const pathAttr = item.getAttribute("data-path");
-			if (!pathAttr) return;
-
-			const status = mergedStatuses.get(pathAttr);
-			if (status) {
-				this.addBadgeToElement(item, status);
-			}
-		});
-
-		// Add badges to folders
-		document.querySelectorAll(".nav-folder-title").forEach((item) => {
-			const pathAttr = item.getAttribute("data-path");
-			if (!pathAttr) return;
-
-			const status = folderStatuses.get(pathAttr);
-			if (status) {
-				this.addBadgeToElement(item, status);
-			}
-		});
-
-		// Update previous statuses for diff tracking
-		this.previousStatuses = this.getMergedStatuses();
-	}
-
-	private calculateFolderStatuses(statuses: Map<string, FileStatus>): Map<string, FileStatus> {
-		const folderStatuses = new Map<string, FileStatus>();
-
-		statuses.forEach((status, filePath) => {
-			// Get all parent folders
-			const parts = filePath.split(/[/\\]/);
-			for (let i = 1; i < parts.length; i++) {
-				const folderPath = parts.slice(0, i).join("/");
-				const existing = folderStatuses.get(folderPath);
-				// Priority: U (conflict) > A > M > R > D
-				if (!existing || this.statusPriority(status) > this.statusPriority(existing)) {
-					folderStatuses.set(folderPath, status);
-				}
-			}
-		});
-
-		return folderStatuses;
-	}
-
-	private statusPriority(status: FileStatus): number {
-		switch (status) {
-			case "U": return 4; // Conflict - highest priority
-			case "A": return 3;
-			case "M": return 2;
-			case "R": return 1;
-			default: return 0;
-		}
-	}
-
-	private addBadgeToElement(item: Element, status: FileStatus) {
-		const badge = document.createElement("span");
-		badge.className = "git-status-badge";
-		badge.textContent = "●";
-
-		if (status === "U") {
-			badge.classList.add("conflict");
-		} else if (status === "M") {
-			badge.classList.add("modified");
-		} else if (status === "A") {
-			badge.classList.add("added");
-		} else if (status === "R") {
-			badge.classList.add("renamed");
-		}
-
-		item.appendChild(badge);
+		void this.statusBadges?.refresh();
 	}
 }

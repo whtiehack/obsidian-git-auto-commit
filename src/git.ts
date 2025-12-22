@@ -243,50 +243,63 @@ export async function revertFile(cwd: string, gitPath: string, filePath: string)
 
 export type FileStatus = "M" | "A" | "R" | "U" | "";
 
-export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
+function parsePorcelainV1Z(stdout: string): Map<string, FileStatus> {
 	const statusMap = new Map<string, FileStatus>();
+	if (!stdout) return statusMap;
 
-	try {
-		const stdout = await runGit({ cwd, gitPath, args: ["status", "--porcelain=v1", "-z"] });
-		if (!stdout) return statusMap;
+	const parts = stdout.split("\0").filter(Boolean);
 
-		const parts = stdout.split("\0").filter(Boolean);
+	for (let i = 0; i < parts.length; i++) {
+		const entry = parts[i];
+		const xy = entry.slice(0, 2);
+		let filePath = entry.slice(3);
 
-		for (let i = 0; i < parts.length; i++) {
-			const entry = parts[i];
-			const xy = entry.slice(0, 2);
-			let filePath = entry.slice(3);
-
-			// Rename/copy entries include an extra NUL-separated "new path"
-			if (xy.startsWith("R") || xy.startsWith("C")) {
-				const newPath = parts[++i];
-				if (newPath) filePath = newPath;
-			}
-
-			// Determine status: X is staged, Y is unstaged
-			let status: FileStatus = "";
-
-			if (xy.includes("U")) {
-				status = "U"; // Unmerged / conflict (highest priority)
-			} else if (xy === "??") {
-				status = "A"; // Untracked = new file
-			} else if (xy.includes("A")) {
-				status = "A"; // Added
-			} else if (xy.includes("M")) {
-				status = "M"; // Modified
-			} else if (xy.includes("R") || xy.includes("C")) {
-				status = "R"; // Renamed / copied
-			}
-
-			if (filePath && status) {
-				statusMap.set(filePath, status);
-			}
+		if (xy.includes("R") || xy.includes("C")) {
+			const newPath = parts[++i];
+			if (newPath) filePath = newPath;
 		}
-	} catch {
-		// Not a git repo or git error
+
+		let status: FileStatus = "";
+		if (xy.includes("U")) {
+			status = "U";
+		} else if (xy === "??") {
+			status = "A";
+		} else if (xy.includes("A")) {
+			status = "A";
+		} else if (xy.includes("M")) {
+			status = "M";
+		} else if (xy.includes("R") || xy.includes("C")) {
+			status = "R";
+		}
+
+		if (filePath && status) {
+			statusMap.set(filePath, status);
+		}
 	}
 
 	return statusMap;
+}
+
+export async function getFileStatuses(cwd: string, gitPath: string): Promise<Map<string, FileStatus>> {
+	try {
+		const stdout = await runGit({ cwd, gitPath, args: ["status", "--porcelain=v1", "-z"] });
+		return parsePorcelainV1Z(stdout);
+	} catch {
+		return new Map<string, FileStatus>();
+	}
+}
+
+export async function getTrackedFiles(cwd: string, gitPath: string): Promise<Set<string>> {
+	const tracked = new Set<string>();
+	try {
+		const stdout = await runGit({ cwd, gitPath, args: ["ls-files", "-z"] });
+		if (stdout) {
+			stdout.split("\0").filter(Boolean).forEach((p) => tracked.add(p));
+		}
+	} catch {
+		// Ignore
+	}
+	return tracked;
 }
 
 // Get remote default branch (main/master)

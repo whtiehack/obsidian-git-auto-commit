@@ -3,24 +3,33 @@
 	position: relative;
 }
 
-.git-status-badge {
+.nav-file-title[data-git-status]::after,
+.nav-folder-title[data-git-status]::after {
+	content: "●";
 	position: absolute;
 	right: 4px;
-	font-size: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 10px;
+	pointer-events: none;
 }
 
-.git-status-badge.modified {
+.nav-file-title[data-git-status="M"]::after,
+.nav-folder-title[data-git-status="M"]::after {
 	color: #d19a66;
 }
 
-.git-status-badge.added {
+.nav-file-title[data-git-status="A"]::after,
+.nav-folder-title[data-git-status="A"]::after {
 	color: #98c379;
 }
 
-.git-status-badge.renamed {
+.nav-file-title[data-git-status="R"]::after,
+.nav-folder-title[data-git-status="R"]::after {
 	color: #61afef;
 }
 
-.git-status-badge.conflict {
+.nav-file-title[data-git-status="U"]::after,
+.nav-folder-title[data-git-status="U"]::after {
 	color: #ff0000;
 }
