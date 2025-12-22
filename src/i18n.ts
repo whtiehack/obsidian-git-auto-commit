@@ -30,6 +30,9 @@ type Translations = {
 	ignoreObsidianName: string;
 	ignoreObsidianDesc: string;
 
+	debugLogName: string;
+	debugLogDesc: string;
+
 	includeFileListName: string;
 	includeFileListDesc: string;
 
@@ -159,6 +162,9 @@ const en: Translations = {
 	ignoreObsidianName: "Ignore config directory",
 	ignoreObsidianDesc: "Exclude Obsidian config folder from triggering auto-commits.",
 
+	debugLogName: "Debug logging",
+	debugLogDesc: "Log git commands to console (Ctrl+Shift+I to view).",
+
 	includeFileListName: "Include file list in commit body",
 	includeFileListDesc: "List changed files in commit message body, one per line.",
 
@@ -282,6 +288,9 @@ const zhCN: Translations = {
 
 	ignoreObsidianName: "忽略配置目录",
 	ignoreObsidianDesc: "排除 Obsidian 配置文件夹触发自动提交。",
+
+	debugLogName: "调试日志",
+	debugLogDesc: "将 git 命令输出到控制台（Ctrl+Shift+I 查看）。",
 
 	includeFileListName: "在提交正文中包含文件列表",
 	includeFileListDesc: "在提交消息正文中列出变动的文件，每行一个。",

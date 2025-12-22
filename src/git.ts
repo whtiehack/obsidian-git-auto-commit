@@ -8,16 +8,41 @@ interface GitRunOptions {
 	args: string[];
 }
 
+let debugEnabled = false;
+
+export function setGitDebug(enabled: boolean): void {
+	debugEnabled = enabled;
+}
+
+function log(message: string, ...args: unknown[]): void {
+	if (!debugEnabled) return;
+	globalThis.console.debug(`[auto-git] ${message}`, ...args);
+}
+
+function logCmd(args: string[]): void {
+	if (!debugEnabled) return;
+	globalThis.console.debug(`[auto-git] > git ${args.join(" ")}`);
+}
+
 function runGitSync({ cwd, gitPath, args }: GitRunOptions): string {
-	return execFileSync(gitPath, args, {
-		cwd,
-		windowsHide: true,
-		env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
-		encoding: "utf8",
-	});
+	logCmd(args);
+	try {
+		const result = execFileSync(gitPath, args, {
+			cwd,
+			windowsHide: true,
+			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+			encoding: "utf8",
+		});
+		log("ok");
+		return result;
+	} catch (e) {
+		log("error:", (e as Error).message);
+		throw e;
+	}
 }
 
 function runGit({ cwd, gitPath, args }: GitRunOptions): Promise<string> {
+	logCmd(args);
 	return new Promise((resolve, reject) => {
 		execFile(
 			gitPath,
@@ -29,9 +54,11 @@ function runGit({ cwd, gitPath, args }: GitRunOptions): Promise<string> {
 			},
 			(err, stdout, stderr) => {
 				if (err) {
+					log("error:", stderr?.trim() || err.message);
 					reject(new Error(stderr?.trim() || err.message));
 					return;
 				}
+				log("ok");
 				resolve(stdout);
 			}
 		);

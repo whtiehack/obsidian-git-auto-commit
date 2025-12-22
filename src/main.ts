@@ -1,6 +1,6 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached } from "./git";
+import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached, setGitDebug } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
 import { RevertConfirmModal } from "./modals";
@@ -111,6 +111,7 @@ export default class AutoGitPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<AutoGitSettings>);
+		setGitDebug(this.settings.debugLog);
 	}
 
 	async saveSettings() {

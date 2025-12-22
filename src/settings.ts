@@ -1,7 +1,7 @@
 import { App, Notice, Platform, PluginSettingTab, Setting } from "obsidian";
 import type AutoGitPlugin from "./main";
 import { t } from "./i18n";
-import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, detectRepoState, RepoState, connectToRemote, initAndPush, setUpstream } from "./git";
+import { isGitRepo, initRepo, getRemoteUrl, setRemoteUrl, hasConflicts, markConflictsResolved, detectRepoState, RepoState, connectToRemote, initAndPush, setUpstream, setGitDebug } from "./git";
 
 export interface AutoGitSettings {
 	autoCommit: boolean;
@@ -16,6 +16,7 @@ export interface AutoGitSettings {
 	showStatusBadge: boolean;
 	showRibbonButton: boolean;
 	badgeRefreshInterval: number; // 0 = disabled, otherwise seconds
+	debugLog: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoGitSettings = {
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	showStatusBadge: true,
 	showRibbonButton: true,
 	badgeRefreshInterval: 0, // 0 = disabled (event-driven only), otherwise seconds
+	debugLog: false,
 };
 
 export class AutoGitSettingTab extends PluginSettingTab {
@@ -213,6 +215,17 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.ignoreObsidianDir).onChange(async (value) => {
 					this.plugin.settings.ignoreObsidianDir = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName(i18n.debugLogName)
+			.setDesc(i18n.debugLogDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.debugLog).onChange(async (value) => {
+					this.plugin.settings.debugLog = value;
+					setGitDebug(value);
 					await this.plugin.saveSettings();
 				})
 			);
