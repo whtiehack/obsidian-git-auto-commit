@@ -81,7 +81,10 @@ export default class AutoGitPlugin extends Plugin {
 							});
 							let message = subject;
 							if (this.settings.includeFileList) {
-								message += "\n\n" + changedFiles.join("\n");
+								const fileList = changedFiles.length <= 5
+									? changedFiles.join("\n")
+									: changedFiles.slice(0, 5).join("\n") + `\n... and ${changedFiles.length - 5} more`;
+								message += "\n\n" + fileList;
 							}
 							commitSyncAndPushDetached(cwd, this.settings.gitPath, message);
 						}
@@ -242,7 +245,10 @@ export default class AutoGitPlugin extends Plugin {
 
 			let message = subject;
 			if (this.settings.includeFileList) {
-				message = subject + "\n\n" + changedFiles.join("\n");
+				const fileList = changedFiles.length <= 5
+					? changedFiles.join("\n")
+					: changedFiles.slice(0, 5).join("\n") + `\n... and ${changedFiles.length - 5} more`;
+				message = subject + "\n\n" + fileList;
 			}
 
 			await commitAll(cwd, gitPath, message);
