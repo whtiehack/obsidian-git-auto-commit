@@ -320,21 +320,24 @@ export class AutoGitSettingTab extends PluginSettingTab {
 					})
 				);
 
-			// Option 3: Local only
-			new Setting(container)
-				.setName(i18n.wizardLocalOnly)
-				.setDesc(i18n.wizardLocalOnlyDesc)
-				.addButton((btn) =>
-					btn.setButtonText(i18n.wizardLocalOnlyButton).onClick(async () => {
-						try {
-							await initRepo(cwd, gitPath);
-							new Notice(i18n.noticeRepoInitialized);
-							this.display();
-						} catch (e) {
-							new Notice((e as Error).message);
-						}
-					})
-				);
+			// Option 3: Local only (only for not-a-repo, since empty-repo is already initialized)
+			if (state === "not-a-repo") {
+				new Setting(container)
+					.setName(i18n.wizardLocalOnly)
+					.setDesc(i18n.wizardLocalOnlyDesc)
+					.addButton((btn) =>
+						btn.setButtonText(i18n.wizardLocalOnlyButton).onClick(async () => {
+							try {
+								const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
+								await initRepo(cwd, gitPath, ignoreDir);
+								new Notice(i18n.noticeRepoInitialized);
+								this.display();
+							} catch (e) {
+								new Notice((e as Error).message);
+							}
+						})
+					);
+			}
 		} else if (state === "local-only") {
 			let remoteInput = "";
 
@@ -405,7 +408,8 @@ export class AutoGitSettingTab extends PluginSettingTab {
 				.addButton((btn) =>
 					btn.setButtonText(i18n.initRepoButton).onClick(async () => {
 						try {
-							await initRepo(cwd, gitPath);
+							const ignoreDir = this.plugin.settings.ignoreObsidianDir ? this.app.vault.configDir : undefined;
+							await initRepo(cwd, gitPath, ignoreDir);
 							new Notice(i18n.noticeRepoInitialized);
 							this.display();
 						} catch (e) {

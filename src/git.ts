@@ -231,8 +231,9 @@ export async function isGitRepo(cwd: string, gitPath: string): Promise<boolean> 
 	}
 }
 
-export async function initRepo(cwd: string, gitPath: string): Promise<void> {
+export async function initRepo(cwd: string, gitPath: string, ignoreDir?: string): Promise<void> {
 	await runGit({ cwd, gitPath, args: ["init"] });
+	await ensureGitignore(cwd, ignoreDir);
 }
 
 export async function getRemoteUrl(cwd: string, gitPath: string): Promise<string> {
