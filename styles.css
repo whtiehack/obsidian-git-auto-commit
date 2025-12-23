@@ -3,9 +3,7 @@
 	position: relative;
 }
 
-.nav-file-title[data-git-status]::after,
-.nav-folder-title[data-git-status]::after {
-	content: "●";
+.git-status-badge {
 	position: absolute;
 	right: 4px;
 	top: 50%;
@@ -14,22 +12,22 @@
 	pointer-events: none;
 }
 
-.nav-file-title[data-git-status="M"]::after,
-.nav-folder-title[data-git-status="M"]::after {
+.git-status-badge::before {
+	content: "●";
+}
+
+.git-status-badge[data-status="M"] {
 	color: #d19a66;
 }
 
-.nav-file-title[data-git-status="A"]::after,
-.nav-folder-title[data-git-status="A"]::after {
+.git-status-badge[data-status="A"] {
 	color: #98c379;
 }
 
-.nav-file-title[data-git-status="R"]::after,
-.nav-folder-title[data-git-status="R"]::after {
+.git-status-badge[data-status="R"] {
 	color: #61afef;
 }
 
-.nav-file-title[data-git-status="U"]::after,
-.nav-folder-title[data-git-status="U"]::after {
+.git-status-badge[data-status="U"] {
 	color: #ff0000;
 }

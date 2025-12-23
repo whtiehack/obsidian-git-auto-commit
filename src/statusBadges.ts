@@ -189,8 +189,10 @@ export class GitStatusBadgeManager {
 			const path = el.getAttribute("data-path");
 			if (!path) return;
 
+			let badge = el.querySelector<HTMLElement>(".git-status-badge");
+
 			if (this.opts.shouldIgnore(path)) {
-				el.removeAttribute("data-git-status");
+				if (badge) badge.remove();
 				return;
 			}
 
@@ -202,16 +204,20 @@ export class GitStatusBadgeManager {
 			}
 
 			if (status) {
-				el.setAttribute("data-git-status", status);
-			} else {
-				el.removeAttribute("data-git-status");
+				if (!badge) {
+					badge = document.createElement("span");
+					badge.className = "git-status-badge";
+					el.appendChild(badge);
+				}
+				badge.setAttribute("data-status", status);
+			} else if (badge) {
+				badge.remove();
 			}
 		});
 	}
 
 	private clearDom(): void {
-		document.querySelectorAll<HTMLElement>("[data-git-status]")
-			.forEach((el) => el.removeAttribute("data-git-status"));
+		document.querySelectorAll(".git-status-badge").forEach((el) => el.remove());
 	}
 
 	private rebuildFolderStatuses(): void {
