@@ -24,13 +24,44 @@ function logCmd(args: string[]): void {
 	console.debug(`[auto-git] > git ${args.join(" ")}`);
 }
 
+function buildGitEnv(): NodeJS.ProcessEnv {
+	const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
+
+	if (process.platform === "darwin") {
+		const extraPaths = [
+			"/usr/local/bin",
+			"/opt/homebrew/bin",
+			"/usr/local/sbin",
+			"/opt/homebrew/sbin",
+		];
+		const currentPath = env.PATH ?? "";
+		const parts = currentPath.split(path.delimiter).filter(Boolean);
+		const partsNormalized = parts.map((p) => p.replace(/\/+$/, ""));
+		const missing = extraPaths.filter((p) => !partsNormalized.includes(p));
+		if (missing.length > 0) {
+			env.PATH = [...parts, ...missing].join(path.delimiter);
+		}
+	}
+
+	return env;
+}
+
+let cachedGitEnv: NodeJS.ProcessEnv | null = null;
+
+function getGitEnv(): NodeJS.ProcessEnv {
+	if (!cachedGitEnv) {
+		cachedGitEnv = buildGitEnv();
+	}
+	return cachedGitEnv;
+}
+
 function runGitSync({ cwd, gitPath, args }: GitRunOptions): string {
 	logCmd(args);
 	try {
 		const result = execFileSync(gitPath, args, {
 			cwd,
 			windowsHide: true,
-			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+			env: getGitEnv(),
 			encoding: "utf8",
 		});
 		log("ok");
@@ -50,7 +81,7 @@ function runGit({ cwd, gitPath, args }: GitRunOptions): Promise<string> {
 			{
 				cwd,
 				windowsHide: true,
-				env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+				env: getGitEnv(),
 			},
 			(err, stdout, stderr) => {
 				if (err) {
@@ -494,7 +525,7 @@ export function commitSyncAndPushDetached(cwd: string, gitPath: string, message:
 			detached: true,
 			stdio: "ignore",
 			windowsHide: true,
-			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+			env: getGitEnv(),
 		});
 		child.unref();
 	} catch {
