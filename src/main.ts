@@ -5,6 +5,7 @@ import { renderTemplate } from "./template";
 import { t } from "./i18n";
 import { RevertConfirmModal } from "./modals";
 import { GitStatusBadgeManager } from "./statusBadges";
+import { ProgressNotice } from "./notice";
 
 export default class AutoGitPlugin extends Plugin {
 	settings: AutoGitSettings = DEFAULT_SETTINGS;
@@ -235,6 +236,8 @@ export default class AutoGitPlugin extends Plugin {
 				return false;
 			}
 
+			const progress = new ProgressNotice(t().noticeCommitting);
+
 			const now = new Date();
 			const subject = renderTemplate(this.settings.commitTemplate, {
 				date: now.toISOString().slice(0, 10),
@@ -251,17 +254,22 @@ export default class AutoGitPlugin extends Plugin {
 				message = subject + "\n\n" + fileList;
 			}
 
-			await commitAll(cwd, gitPath, message);
-			committed = true;
-			new Notice(t().noticeCommitted(changedFiles.length));
+			try {
+				await commitAll(cwd, gitPath, message);
+				committed = true;
+				progress.succeed(t().noticeCommitted(changedFiles.length));
+			} catch (e) {
+				progress.fail(t().noticeAutoGitError((e as Error).message));
+				throw e;
+			}
 
 			if (this.settings.autoPush) {
 				await this.doPush();
 			}
 
 			void this.statusBadges?.refresh();
-		} catch (e) {
-			new Notice(t().noticeAutoGitError((e as Error).message));
+		} catch {
+			// Error already handled in progress.fail
 		} finally {
 			this.isCommitting = false;
 			if (this.pendingRerun) {
@@ -273,12 +281,13 @@ export default class AutoGitPlugin extends Plugin {
 	}
 
 	async doPush() {
+		const progress = new ProgressNotice(t().noticePushing);
 		try {
 			const cwd = this.getVaultPath();
 			await push(cwd, this.settings.gitPath);
-			new Notice(t().noticePushed);
+			progress.succeed(t().noticePushed);
 		} catch (e) {
-			new Notice(t().noticePushFailed((e as Error).message));
+			progress.fail(t().noticePushFailed((e as Error).message));
 		}
 	}
 
@@ -389,19 +398,20 @@ export default class AutoGitPlugin extends Plugin {
 			return;
 		}
 
+		const progress = new ProgressNotice(t().noticePulling);
 		try {
 			const cwd = this.getVaultPath();
 			const result = await pull(cwd, this.settings.gitPath);
 
 			if (result.hasConflicts) {
 				await this.checkConflicts();
-				new Notice(t().noticeConflictDetected);
+				progress.fail(t().noticeConflictDetected);
 			} else if (result.success) {
-				new Notice(t().noticePulled);
+				progress.succeed(t().noticePulled);
 				void this.statusBadges?.refresh();
 			}
 		} catch (e) {
-			new Notice(t().noticePullFailed((e as Error).message));
+			progress.fail(t().noticePullFailed((e as Error).message));
 		}
 	}
 

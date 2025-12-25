@@ -114,6 +114,11 @@ type Translations = {
 	conflictStatusDesc: string;
 	resolveConflictButton: string;
 
+	// Notices - progress
+	noticePulling: string;
+	noticePushing: string;
+	noticeCommitting: string;
+
 	// Notices
 	noticeNoChanges: string;
 	noticeCommitted: (count: number) => string;
@@ -242,6 +247,10 @@ const en: Translations = {
 	conflictStatusDesc: "Please resolve conflicts manually, then click the button below.",
 	resolveConflictButton: "Mark as resolved",
 
+	noticePulling: "GitAutoCommit: Pulling...",
+	noticePushing: "GitAutoCommit: Pushing...",
+	noticeCommitting: "GitAutoCommit: Committing...",
+
 	noticeNoChanges: "GitAutoCommit: No changes to commit.",
 	noticeCommitted: (count) => `GitAutoCommit: Committed ${count} file(s).`,
 	noticePushed: "GitAutoCommit: Pushed to remote.",
@@ -368,6 +377,10 @@ const zhCN: Translations = {
 	conflictStatusName: "检测到合并冲突",
 	conflictStatusDesc: "请手动解决冲突后，点击下方按钮。",
 	resolveConflictButton: "标记为已解决",
+
+	noticePulling: "GitAutoCommit: 正在拉取...",
+	noticePushing: "GitAutoCommit: 正在推送...",
+	noticeCommitting: "GitAutoCommit: 正在提交...",
 
 	noticeNoChanges: "GitAutoCommit: 没有可提交的更改。",
 	noticeCommitted: (count) => `GitAutoCommit: 已提交 ${count} 个文件。`,
