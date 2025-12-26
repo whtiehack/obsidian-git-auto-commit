@@ -263,7 +263,7 @@ export default class AutoGitPlugin extends Plugin {
 				throw e;
 			}
 
-			if (this.settings.autoPush) {
+			if (reason === "auto" && this.settings.autoPush) {
 				await this.doPush();
 			}
 

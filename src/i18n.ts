@@ -148,8 +148,8 @@ const en: Translations = {
 	debounceName: "Debounce delay (seconds)",
 	debounceDesc: "Wait time after last change before committing.",
 
-	autoPushName: "Auto push after commit",
-	autoPushDesc: "Push to remote after successful commit.",
+	autoPushName: "Auto push after auto commit",
+	autoPushDesc: "Push to remote after successful auto commit.",
 
 	autoPullOnOpenName: "Auto pull on open",
 	autoPullOnOpenDesc: "Pull from remote when Obsidian opens.",
@@ -279,8 +279,8 @@ const zhCN: Translations = {
 	debounceName: "防抖延迟（秒）",
 	debounceDesc: "最后一次变动后等待多久再提交。",
 
-	autoPushName: "提交后自动推送",
-	autoPushDesc: "提交成功后自动推送到远程仓库。",
+	autoPushName: "自动提交后自动推送",
+	autoPushDesc: "自动提交成功后自动推送到远程仓库。",
 
 	autoPullOnOpenName: "打开时自动拉取",
 	autoPullOnOpenDesc: "打开 Obsidian 时自动从远程仓库拉取。",
