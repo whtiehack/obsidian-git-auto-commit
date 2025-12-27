@@ -36,10 +36,8 @@ export default class AutoGitPlugin extends Plugin {
 			id: "commit-and-push",
 			name: "Commit and push",
 			callback: async () => {
-				const committed = await this.runCommit("manual");
-				if (committed) {
-					await this.doPush();
-				}
+				await this.runCommit("manual");
+				await this.doPush();
 			},
 		});
 
@@ -319,10 +317,8 @@ export default class AutoGitPlugin extends Plugin {
 		);
 		menu.addItem((item) =>
 			item.setTitle(i18n.ribbonMenuCommitAndPush).setIcon("upload").onClick(async () => {
-				const committed = await this.runCommit("manual");
-				if (committed) {
-					await this.doPush();
-				}
+				await this.runCommit("manual");
+				await this.doPush();
 			})
 		);
 		menu.addSeparator();
