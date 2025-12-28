@@ -265,6 +265,10 @@ export default class AutoGitPlugin extends Plugin {
 				await this.doPush();
 			}
 
+			if (this.settings.syncRemotelySaveAfterCommit) {
+				this.triggerRemotelySaveSync();
+			}
+
 			void this.statusBadges?.refresh();
 		} catch {
 			// Error already handled in progress.fail
@@ -286,6 +290,15 @@ export default class AutoGitPlugin extends Plugin {
 			progress.succeed(t().noticePushed);
 		} catch (e) {
 			progress.fail(t().noticePushFailed((e as Error).message));
+		}
+	}
+
+	private triggerRemotelySaveSync() {
+		try {
+			const commands = (this.app as unknown as { commands?: { executeCommandById?(id: string): boolean } }).commands;
+			commands?.executeCommandById?.("remotely-save:start-sync");
+		} catch {
+			// Silently ignore if remotely-save is not available
 		}
 	}
 

@@ -9,6 +9,7 @@ export interface AutoGitSettings {
 	commitTemplate: string;
 	includeFileList: boolean;
 	autoPush: boolean;
+	syncRemotelySaveAfterCommit: boolean;
 	autoPullOnOpen: boolean;
 	commitOnClose: boolean;
 	gitPath: string;
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: AutoGitSettings = {
 	commitTemplate: "vault backup: {{date}} {{time}}",
 	includeFileList: true,
 	autoPush: false,
+	syncRemotelySaveAfterCommit: false,
 	autoPullOnOpen: false,
 	commitOnClose: false,
 	gitPath: "git",
@@ -127,6 +129,16 @@ export class AutoGitSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.autoPush).onChange(async (value) => {
 					this.plugin.settings.autoPush = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(autoCommitSettings)
+			.setName(i18n.syncRemotelySaveName)
+			.setDesc(i18n.syncRemotelySaveDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.syncRemotelySaveAfterCommit).onChange(async (value) => {
+					this.plugin.settings.syncRemotelySaveAfterCommit = value;
 					await this.plugin.saveSettings();
 				})
 			);

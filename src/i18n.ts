@@ -14,6 +14,9 @@ type Translations = {
 	autoPushName: string;
 	autoPushDesc: string;
 
+	syncRemotelySaveName: string;
+	syncRemotelySaveDesc: string;
+
 	autoPullOnOpenName: string;
 	autoPullOnOpenDesc: string;
 
@@ -151,6 +154,9 @@ const en: Translations = {
 	autoPushName: "Auto push after auto commit",
 	autoPushDesc: "Push to remote after successful auto commit.",
 
+	syncRemotelySaveName: "Trigger Remotely Save sync",
+	syncRemotelySaveDesc: "Trigger Remotely Save plugin sync after commit. Requires Remotely Save plugin. Note: Does not work with commit on close.",
+
 	autoPullOnOpenName: "Auto pull on open",
 	autoPullOnOpenDesc: "Pull from remote when Obsidian opens.",
 
@@ -281,6 +287,9 @@ const zhCN: Translations = {
 
 	autoPushName: "自动提交后自动推送",
 	autoPushDesc: "自动提交成功后自动推送到远程仓库。",
+
+	syncRemotelySaveName: "触发 Remotely Save 同步",
+	syncRemotelySaveDesc: "提交后触发 Remotely Save 插件同步。需要安装 Remotely Save 插件。注意：关闭时提交不会触发。",
 
 	autoPullOnOpenName: "打开时自动拉取",
 	autoPullOnOpenDesc: "打开 Obsidian 时自动从远程仓库拉取。",
