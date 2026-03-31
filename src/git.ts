@@ -177,6 +177,12 @@ export async function getChangedFiles(cwd: string, gitPath: string): Promise<str
 	return [...new Set(files)];
 }
 
+export async function getChangedFileDiff(cwd: string, gitPath: string, filePath: string): Promise<string> {
+	const stdout = await runGit({ cwd, gitPath, args: ["diff", "--", filePath] });
+	if (!stdout) return "";
+	return stdout;
+}
+
 export async function commitAll(cwd: string, gitPath: string, message: string): Promise<void> {
 	await runGit({ cwd, gitPath, args: ["add", "-A"] });
 

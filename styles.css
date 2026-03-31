@@ -31,3 +31,8 @@
 .git-status-badge[data-status="U"] {
 	color: #ff0000;
 }
+
+.diff-preview-modal {
+	font-size: var(--font-ui-small);
+	overflow: scroll;
+}

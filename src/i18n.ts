@@ -60,6 +60,7 @@ type Translations = {
 	revertConfirmDesc: string;
 	revertConfirmButton: string;
 	revertCancelButton: string;
+	revertViewChanges: string,
 	revertNoChanges: string;
 	revertFileMenu: string;
 	noticeFileReverted: string;
@@ -199,6 +200,7 @@ const en: Translations = {
 	revertConfirmDesc: "The following files will be reverted:",
 	revertConfirmButton: "Revert",
 	revertCancelButton: "Cancel",
+	revertViewChanges: "(view changes)",
 	revertNoChanges: "No changes to revert.",
 	revertFileMenu: "Revert file changes",
 	noticeFileReverted: "GitAutoCommit: File reverted.",
@@ -333,6 +335,7 @@ const zhCN: Translations = {
 	revertConfirmDesc: "以下文件将被还原：",
 	revertConfirmButton: "还原",
 	revertCancelButton: "取消",
+	revertViewChanges: "(view changes)",
 	revertNoChanges: "没有可还原的修改。",
 	revertFileMenu: "还原文件修改",
 	noticeFileReverted: "GitAutoCommit: 文件已还原。",
