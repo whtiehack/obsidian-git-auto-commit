@@ -1,9 +1,9 @@
 import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
-import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached, setGitDebug } from "./git";
+import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached, setGitDebug, getChangedFileDiff } from "./git";
 import { renderTemplate } from "./template";
 import { t } from "./i18n";
-import { RevertConfirmModal } from "./modals";
+import { RevertConfirmModal, ViewDiffModal } from "./modals";
 import { GitStatusBadgeManager } from "./statusBadges";
 import { ProgressNotice } from "./notice";
 
@@ -362,6 +362,11 @@ export default class AutoGitPlugin extends Plugin {
 						new Notice(t().noticeRevertFailed((e as Error).message));
 					}
 				})();
+			}, (filePath: string) => {
+				void (async () => {
+					const diff = await getChangedFileDiff(cwd, this.settings.gitPath, filePath);
+					new ViewDiffModal(this.app, filePath, diff).open();
+				})();
 			}).open();
 		} catch (e) {
 			new Notice(t().noticeRevertFailed((e as Error).message));
@@ -393,6 +398,11 @@ export default class AutoGitPlugin extends Plugin {
 									} catch (e) {
 										new Notice(t().noticeFileRevertFailed((e as Error).message));
 									}
+								})();
+							}, (filePath: string) => {
+								void (async () => {
+									const diff = await getChangedFileDiff(this.getVaultPath(), this.settings.gitPath, filePath);
+									new ViewDiffModal(this.app, filePath, diff).open();
 								})();
 							}).open();
 						});
