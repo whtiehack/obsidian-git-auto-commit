@@ -80,6 +80,12 @@ export class GitStatusBadgeManager {
 		return this.fileStatuses.get(path) ?? "";
 	}
 
+	getFolderStatus(path: string): FileStatus {
+		if (!this.enabled || this.opts.shouldIgnore(path)) return "";
+		if (this.conflicts.has(path)) return "U";
+		return this.folderStatuses.get(path) ?? "";
+	}
+
 	noteCreate(path: string): void {
 		if (!this.enabled || this.opts.shouldIgnore(path)) return;
 		if (!this.trackedLoaded) return;

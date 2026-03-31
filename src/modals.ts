@@ -15,7 +15,7 @@ export class RevertConfirmModal extends Modal {
 		const i18n = t();
 		const { contentEl } = this;
 
-		contentEl.createEl("h2", { text: i18n.revertConfirmTitle });
+		this.setTitle(i18n.revertConfirmTitle);
 		contentEl.createEl("p", { text: i18n.revertConfirmDesc });
 
 		const listEl = contentEl.createEl("ul", { cls: "revert-file-list" });
