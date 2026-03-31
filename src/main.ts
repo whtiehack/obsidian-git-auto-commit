@@ -1,4 +1,4 @@
-import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, FileSystemAdapter } from "obsidian";
+import { EventRef, Menu, Notice, Platform, Plugin, TAbstractFile, TFile, TFolder, FileSystemAdapter } from "obsidian";
 import { AutoGitSettings, AutoGitSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { getChangedFiles, commitAll, push, pull, getConflictFiles, markConflictsResolved, revertAll, revertFile, getChangedFilesSync, commitSyncAndPushDetached, setGitDebug } from "./git";
 import { renderTemplate } from "./template";
@@ -373,21 +373,37 @@ export default class AutoGitPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile)) return;
+				let filePaths = [];
+				if (file instanceof TFolder) {
+					const status = this.statusBadges?.getFolderStatus(file.path);
+					if (!status) return;
+					// We fetch all changes because if we only walked the current children we would miss deleted files...
+					const changedFiles = getChangedFilesSync(this.getVaultPath(), this.settings.gitPath);
+					const prefix = file.path + "/";
+					for (const filePath of changedFiles) {
+						if (filePath.startsWith(prefix)) {
+							filePaths.push(filePath);
+						}
+					}
+				} else {
+					const status = this.statusBadges?.getStatus(file.path);
+					if (!status) return;
+					filePaths.push(file.path);
+				}
 
-				const filePath = file.path;
-				const status = this.statusBadges?.getStatus(filePath);
-				if (!status) return;
+				if (filePaths.length === 0) return;
 
 				menu.addItem((item) => {
 					item.setTitle(t().revertFileMenu)
 						.setIcon("rotate-ccw")
 						.onClick(() => {
-							new RevertConfirmModal(this.app, [filePath], () => {
+							new RevertConfirmModal(this.app, filePaths, () => {
 								void (async () => {
 									try {
 										const cwd = this.getVaultPath();
-										await revertFile(cwd, this.settings.gitPath, filePath);
+										for (const filePath of filePaths) {
+											await revertFile(cwd, this.settings.gitPath, filePath);
+										}
 										new Notice(t().noticeFileReverted);
 										void this.statusBadges?.refresh();
 									} catch (e) {
